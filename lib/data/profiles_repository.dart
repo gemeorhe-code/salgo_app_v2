@@ -1,6 +1,14 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'supabase_gate.dart';
+
+String _redact(Object? value) {
+  final String text = value?.toString() ?? 'null';
+  return text
+      .replaceAll(RegExp(r'\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+'), '[token]')
+      .replaceAll(RegExp(r'[\w.+-]+@[\w-]+\.[\w.-]+'), '[email]');
+}
 
 class ProfileRecord {
   const ProfileRecord({
@@ -44,6 +52,8 @@ class ProfileSyncResult {
 }
 
 class ProfilesRepository {
+  static const String _table = 'salgo_profiles';
+
   ProfilesRepository({SupabaseClient? client})
     : _client = client ?? SupabaseGate.client;
 
@@ -62,7 +72,7 @@ class ProfilesRepository {
 
     try {
       final List<Map<String, dynamic>> rows = await client
-          .from('profiles')
+          .from(_table)
           .select()
           .eq('id', user.id);
 
@@ -82,15 +92,22 @@ class ProfilesRepository {
       };
 
       if (remote == null) {
-        await client.from('profiles').insert(values);
+        await client.from(_table).insert(values);
       } else {
-        await client.from('profiles').update(values).eq('id', user.id);
+        await client.from(_table).update(values).eq('id', user.id);
       }
 
       return ProfileSyncResult(
         record: ProfileRecord.fromMap(values),
         wroteLocal: true,
       );
+    } on PostgrestException catch (error) {
+      debugPrint(
+        '$_table PostgrestException code=${_redact(error.code)} '
+        'message=${_redact(error.message)} details=${_redact(error.details)} '
+        'hint=${_redact(error.hint)}',
+      );
+      return null;
     } on Object {
       return null;
     }
