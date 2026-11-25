@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../app_routes.dart';
 import '../data/user_profile_repository.dart';
+import '../data/notifications_repository.dart';
 import '../data/places_repository.dart';
 import '../data/places_scope.dart';
+import '../data/preferences_repository.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../widgets/salgo_header.dart';
@@ -163,6 +166,12 @@ class ProfileScreen extends StatelessWidget {
                   leading: const Icon(Icons.logout),
                   onPressed: () async {
                     final messenger = ScaffoldMessenger.of(context);
+                    final PreferencesRepository prefsRepo =
+                        context.read<PreferencesRepository>();
+                    final NotificationsRepository notificationsRepo =
+                        context.read<NotificationsRepository>();
+                    await prefsRepo.onSignedOut();
+                    await notificationsRepo.onSignedOut();
                     await repository.onSignedOut();
                     final String? error = await upRepository.signOut();
                     if (!context.mounted) return;

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -11,12 +13,13 @@ class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
 
   @override
-State<NotificationsScreen> createState() => _NotificationsScreenState();
+  State<NotificationsScreen> createState() => _NotificationsScreenState();
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
   late final NotificationsRepository _notifRepo;
   late final BuildContext _context;
+  bool _isMarking = false;
 
   @override
   void initState() {
@@ -34,21 +37,67 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Notificaciones',
-          textAlign: TextAlign.center,
-        ),
+        title: const Text('Notificaciones', textAlign: TextAlign.center),
         actions: [
           IconButton(
             icon: const Icon(Icons.done_all),
             tooltip: 'Marcar todas como leídas',
-            onPressed: _markAllRead,
+            onPressed: _isMarking ? null : () => unawaited(_markAllRead()),
           ),
         ],
       ),
       body: ListenableBuilder(
         listenable: _notifRepo,
-        builder: (context, _) => _buildBody(),
+        builder: (context, _) => Column(
+          children: [
+            ValueListenableBuilder<String?>(
+              valueListenable: _notifRepo.syncError,
+              builder: (context, error, _) {
+                if (error == null) return const SizedBox.shrink();
+                return Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.orangeDark,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    error,
+                    style: const TextStyle(
+                      color: AppColors.textLight,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                );
+              },
+            ),
+            if (_notifRepo.isLoadingStates || _isMarking)
+              const LinearProgressIndicator(
+                minHeight: 2,
+                color: AppColors.teal,
+                backgroundColor: AppColors.orange,
+              ),
+            SwitchListTile(
+              value: _notifRepo.notificationsEnabled,
+              onChanged: _notifRepo.isLoadingStates || _isMarking
+                  ? null
+                  : _setGlobalEnabled,
+              title: const Text(
+                'Activar sugerencias',
+                style: TextStyle(
+                  color: AppColors.textDark,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              subtitle: const Text('Recibe planes según tus preferencias'),
+              activeThumbColor: AppColors.teal,
+            ),
+            const Divider(height: 1),
+            Expanded(child: _buildBody()),
+          ],
+        ),
       ),
     );
   }
@@ -73,8 +122,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         final notif = visible[index];
         return _NotificationCard(
           notification: notif,
-          onTap: () => _onNotificationTap(notif),
-          onDismiss: () => _onDismiss(notif),
+          onTap: () => unawaited(_onNotificationTap(notif)),
+          onDismiss: () => unawaited(_onDismiss(notif)),
         );
       },
       addAutomaticKeepAlives: true,
@@ -86,11 +135,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
-            Icons.notifications_none,
-            size: 80,
-            color: AppColors.teal,
-          ),
+          const Icon(Icons.notifications_none, size: 80, color: AppColors.teal),
           const SizedBox(height: 16),
           const Text(
             'Aún no tienes sugerencias.',
@@ -102,7 +147,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            _notifRepo.hasPreferences
+            !_notifRepo.notificationsEnabled
+                ? 'Activa las sugerencias para volver a recibirlas.'
+                : _notifRepo.hasPreferences
                 ? 'No hay lugares que coincidan con tus preferencias.'
                 : 'Llena el formulario de preferencias para recibirlas.',
             style: TextStyle(
@@ -123,29 +170,37 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  void _markAllRead() {
-    _notifRepo.markAllRead();
+  Future<void> _setGlobalEnabled(bool enabled) async {
+    setState(() => _isMarking = true);
+    await _notifRepo.setGlobalEnabled(enabled);
+    if (mounted) setState(() => _isMarking = false);
   }
 
-  void _onNotificationTap(AppNotification notif) {
+  Future<void> _markAllRead() async {
+    setState(() => _isMarking = true);
+    await _notifRepo.markAllRead();
+    if (!mounted) return;
+    setState(() => _isMarking = false);
+  }
+
+  Future<void> _onNotificationTap(AppNotification notif) async {
+    await _notifRepo.markRead(notif.placeId);
+    if (!mounted) return;
     final place = PlacesScope.of(_context).placeById(notif.placeId);
     if (place != null) {
-      Navigator.pushNamed(
-        _context,
-        AppRoutes.placeDetail,
-        arguments: place.id,
-      );
+      Navigator.pushNamed(_context, AppRoutes.placeDetail, arguments: place.id);
     }
     setState(() {});
   }
 
-  void _onDismiss(AppNotification notif) {
-    _notifRepo.markDismissed(notif.placeId);
+  Future<void> _onDismiss(AppNotification notif) async {
+    setState(() => _isMarking = true);
+    await _notifRepo.markDismissed(notif.placeId);
+    if (!mounted) return;
+    setState(() => _isMarking = false);
     ScaffoldMessenger.of(_context).clearSnackBars();
-    ScaffoldMessenger.of(_context).showSnackBar(
-      const SnackBar(content: Text('Notificación eliminada')),
-    );
-    setState(() {});
+    ScaffoldMessenger.of(_context)
+        .showSnackBar(const SnackBar(content: Text('Notificación eliminada')));
   }
 }
 
@@ -217,7 +272,9 @@ class _NotificationCardState extends State<_NotificationCard> {
                             color: AppColors.textDark,
                             fontWeight: FontWeight.w700,
                             fontSize: 15,
-                            decoration: isRead ? TextDecoration.lineThrough : null,
+                            decoration: isRead
+                                ? TextDecoration.lineThrough
+                                : null,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -235,7 +292,10 @@ class _NotificationCardState extends State<_NotificationCard> {
                           children: [
                             for (final tag in notif.tags)
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
                                   color: AppColors.orange,
                                   borderRadius: BorderRadius.circular(10),
