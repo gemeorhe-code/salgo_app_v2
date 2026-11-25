@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../app_routes.dart';
 import '../data/google_auth_service.dart';
+import '../data/places_scope.dart';
 import '../data/supabase_auth_service.dart';
 import '../data/user_profile_repository.dart';
 import '../theme/app_colors.dart';
@@ -101,6 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
           SnackBar(content: Text('¡Bienvenido, ${user.name}!')),
         );
       }
+      unawaited(PlacesScope.of(context).onSignedIn(supabaseUser.id));
       Navigator.pushReplacementNamed(context, AppRoutes.home);
     } on GoogleAuthException catch (error) {
       if (!mounted) return;

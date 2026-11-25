@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,6 +21,7 @@ import 'screens/preferences_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/notifications_screen.dart';
 import 'theme/app_theme.dart';
+import 'widgets/favorites_sync_bridge.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 
@@ -80,6 +83,8 @@ class SalgoApp extends StatefulWidget {
 }
 
 class _SalgoAppState extends State<SalgoApp> {
+  final GlobalKey<ScaffoldMessengerState> _messengerKey =
+      GlobalKey<ScaffoldMessengerState>();
   final PlacesRepository _repository = PlacesRepository();
   late final UserProfileRepository _userProfile =
       widget.userProfile ?? UserProfileRepository();
@@ -93,6 +98,7 @@ class _SalgoAppState extends State<SalgoApp> {
     _notifications = widget.notifications ?? NotificationsRepository(
       preferences: _preferences,
     );
+    unawaited(_repository.init());
   }
 
   @override
@@ -111,6 +117,12 @@ class _SalgoAppState extends State<SalgoApp> {
           title: 'SALGO APP',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light,
+          scaffoldMessengerKey: _messengerKey,
+          builder: (BuildContext context, Widget? child) => FavoritesSyncBridge(
+            notifier: _repository.syncMessage,
+            messengerKey: _messengerKey,
+            child: child ?? const SizedBox.shrink(),
+          ),
           initialRoute:
               _userProfile.isSignedIn ? AppRoutes.home : AppRoutes.login,
           routes: {

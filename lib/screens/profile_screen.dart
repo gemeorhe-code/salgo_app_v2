@@ -163,6 +163,7 @@ class ProfileScreen extends StatelessWidget {
                   leading: const Icon(Icons.logout),
                   onPressed: () async {
                     final messenger = ScaffoldMessenger.of(context);
+                    await repository.onSignedOut();
                     final String? error = await upRepository.signOut();
                     if (!context.mounted) return;
                     if (error != null) {
