@@ -6,8 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/notification_state.dart';
 import '../models/place.dart';
-import 'mock_data.dart';
 import 'notification_states_repository.dart';
+import 'places_catalog_service.dart';
 import 'preferences_repository.dart';
 
 class AppNotification {
@@ -28,7 +28,9 @@ class AppNotification {
 
 class NotificationsRepository extends ChangeNotifier {
   NotificationsRepository({PreferencesRepository? preferences})
-    : _prefs = preferences ?? PreferencesRepository();
+    : _prefs = preferences ?? PreferencesRepository() {
+    PlacesCatalog.places.addListener(_handleCatalogChanged);
+  }
 
   static const String _storageKey = 'salgo_notifications_state';
 
@@ -37,6 +39,7 @@ class NotificationsRepository extends ChangeNotifier {
   NotificationStatesRepository? _remote;
   String? _userId;
   bool _isLoadingStates = false;
+  bool _disposed = false;
   bool notificationsEnabled = true;
   final ValueNotifier<String?> syncError = ValueNotifier<String?>(null);
 
@@ -101,6 +104,11 @@ class NotificationsRepository extends ChangeNotifier {
   void refresh() {
     _generateNotifications(_prefs.toMap());
     notifyListeners();
+  }
+
+  void _handleCatalogChanged() {
+    if (_disposed) return;
+    refresh();
   }
 
   Future<void> onSignedIn(String userId) async {
@@ -382,7 +390,9 @@ class NotificationsRepository extends ChangeNotifier {
       return;
     }
 
-    final List<Place> matches = MockData.places.where((Place place) {
+    final List<Place> matches = PlacesCatalog.places.value.where((
+      Place place,
+    ) {
       if (_dismissedIds.contains(place.id)) return false;
       if (place.city != city) return false;
       if (!_matchesPlan(place.category, plan)) return false;
@@ -421,6 +431,8 @@ class NotificationsRepository extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
+    PlacesCatalog.places.removeListener(_handleCatalogChanged);
     syncError.dispose();
     super.dispose();
   }

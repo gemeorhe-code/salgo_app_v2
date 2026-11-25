@@ -1,34 +1,57 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../data/mock_data.dart';
 import '../models/place.dart';
 import 'favorites_sync.dart';
+import 'places_catalog_service.dart';
+import 'supabase_gate.dart';
 
-class PlacesRepository extends ChangeNotifier {
-  PlacesRepository({List<Place>? places, FavoritesSyncService? sync})
-    : _places = List<Place>.of(places ?? MockData.places),
-      _sync = sync ?? FavoritesSyncService();
+class PlacesRepository extends ChangeNotifier with WidgetsBindingObserver {
+  PlacesRepository({
+    List<Place>? places,
+    FavoritesSyncService? sync,
+    PlacesCatalogService? catalog,
+  })  : _places = List<Place>.of(places ?? MockData.places),
+        _sync = sync ?? FavoritesSyncService(),
+        _catalog = catalog ?? PlacesCatalogService();
 
   final List<Place> _places;
   final FavoritesSyncService _sync;
+  final PlacesCatalogService _catalog;
+  bool _observerAdded = false;
+  bool _disposed = false;
 
   ValueNotifier<String?> get syncMessage => _sync.errorNotifier;
 
   Future<void> init() async {
+    if (!_observerAdded && !_disposed) {
+      WidgetsBinding.instance.addObserver(this);
+      _observerAdded = true;
+    }
     await _sync.init();
-    _applyEntries();
-    notifyListeners();
+    final List<Place> fallback = List<Place>.of(_places);
+    final List<Place>? cached = await _catalog.loadFromCache();
+    _replaceCatalog(cached ?? fallback);
   }
 
   Future<void> onSignedIn(String userId) async {
     await _sync.onSignedIn(userId);
-    _applyEntries();
-    notifyListeners();
+    final List<Place>? remote = await _catalog.fetchRemote();
+    if (remote == null) {
+      _applyEntries();
+      PlacesCatalog.publish(_places);
+      notifyListeners();
+      return;
+    }
+    _replaceCatalog(remote);
   }
 
   Future<void> onSignedOut() async {
     await _sync.onSignedOut();
     _applyEntries();
+    PlacesCatalog.publish(_places);
     notifyListeners();
   }
 
@@ -71,8 +94,35 @@ class PlacesRepository extends ChangeNotifier {
     }
   }
 
+  void _replaceCatalog(List<Place> places) {
+    _places
+      ..clear()
+      ..addAll(places);
+    _applyEntries();
+    PlacesCatalog.publish(_places);
+    notifyListeners();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed || _disposed) return;
+    if (SupabaseGate.client?.auth.currentUser == null) return;
+    unawaited(_refreshRemoteCatalog());
+  }
+
+  Future<void> _refreshRemoteCatalog() async {
+    final List<Place>? remote = await _catalog.fetchRemote();
+    if (remote == null || _disposed) return;
+    _replaceCatalog(remote);
+  }
+
   @override
   void dispose() {
+    _disposed = true;
+    if (_observerAdded) {
+      WidgetsBinding.instance.removeObserver(this);
+      _observerAdded = false;
+    }
     _sync.dispose();
     super.dispose();
   }
