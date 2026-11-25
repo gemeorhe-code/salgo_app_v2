@@ -1,0 +1,73 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'google_auth_service.dart';
+import 'supabase_gate.dart';
+
+class SupabaseAuthException implements Exception {
+  const SupabaseAuthException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
+abstract final class SupabaseAuthService {
+  static Future<AuthResponse> signInWithGoogle(GoogleAuthUser user) async {
+    final SupabaseClient? client = SupabaseGate.client;
+    if (client == null) {
+      throw const SupabaseAuthException(
+        'Supabase no está disponible. Revisa la conexión e inténtalo de nuevo.',
+      );
+    }
+    if (user.idToken.isEmpty) {
+      throw const SupabaseAuthException(
+        'Google no devolvió un token de identidad. Inténtalo de nuevo.',
+      );
+    }
+
+    try {
+      return await client.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: user.idToken,
+        accessToken: user.accessToken,
+      );
+    } on AuthException catch (error) {
+      throw SupabaseAuthException(_messageFor(error.message));
+    } on Object {
+      throw const SupabaseAuthException(
+        'No se pudo iniciar sesión con Supabase. Revisa tu conexión e inténtalo de nuevo.',
+      );
+    }
+  }
+
+  static Future<String?> signOut() async {
+    final SupabaseClient? client = SupabaseGate.client;
+    if (client == null) return null;
+    try {
+      await client.auth.signOut();
+      return null;
+    } on AuthException catch (error) {
+      return _messageFor(error.message);
+    } on Object {
+      return 'No se pudo cerrar sesión en Supabase.';
+    }
+  }
+
+  static String _messageFor(String message) {
+    final String lower = message.toLowerCase();
+    if (lower.contains('network') ||
+        lower.contains('socket') ||
+        lower.contains('timeout') ||
+        lower.contains('failed to host')) {
+      return 'Sin conexión con Supabase. Revisa tu red e inténtalo de nuevo.';
+    }
+    if (lower.contains('invalid') ||
+        lower.contains('token') ||
+        lower.contains('nonce') ||
+        lower.contains('provider')) {
+      return 'Google no pudo validar la sesión en Supabase. Configura el proveedor Google e inténtalo de nuevo.';
+    }
+    return 'No se pudo completar la operación con Supabase. Inténtalo de nuevo.';
+  }
+}
