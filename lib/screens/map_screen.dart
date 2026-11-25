@@ -10,6 +10,7 @@ import '../data/places_repository.dart';
 import '../data/places_scope.dart';
 import '../models/place.dart';
 import '../theme/app_colors.dart';
+import '../utils/place_search.dart';
 import '../widgets/place_image.dart';
 import '../widgets/salgo_header.dart';
 
@@ -31,12 +32,18 @@ class _MapScreenState extends State<MapScreen> {
 
   static const double _cityZoom = 13;
   static const double _myLocationZoom = 16;
+  static const Duration _searchDebounce = Duration(milliseconds: 300);
 
   late final LocationService _locationService;
   String _selectedCity = MockData.cities.first;
   int? _selectedPlaceId;
   GoogleMapController? _mapController;
   bool _myLocationEnabled = false;
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  Timer? _searchDebounceTimer;
+  String _typedSearchQuery = '';
+  String _searchQuery = '';
 
   LatLng get _target => _cityCenters[_selectedCity] ?? _cityCenters.values.first;
 
@@ -67,7 +74,12 @@ class _MapScreenState extends State<MapScreen> {
     if (center == null) {
       return;
     }
+    _searchDebounceTimer?.cancel();
+    _searchController.clear();
+    _searchFocusNode.unfocus();
     setState(() {
+      _typedSearchQuery = '';
+      _searchQuery = '';
       _selectedCity = city;
       _selectedPlaceId = null;
     });
@@ -83,6 +95,58 @@ class _MapScreenState extends State<MapScreen> {
   void _clearSelection() {
     if (_selectedPlaceId == null) return;
     setState(() => _selectedPlaceId = null);
+  }
+
+  void _onSearchChanged(String value) {
+    _typedSearchQuery = value;
+    _searchDebounceTimer?.cancel();
+    _searchDebounceTimer = Timer(_searchDebounce, () {
+      if (!mounted) return;
+      setState(() => _searchQuery = _typedSearchQuery);
+    });
+    setState(() {});
+  }
+
+  void _onSearchEditingComplete() {
+    _searchDebounceTimer?.cancel();
+    if (mounted) setState(() => _searchQuery = _typedSearchQuery);
+    _searchFocusNode.unfocus();
+  }
+
+  void _clearSearch() {
+    _searchDebounceTimer?.cancel();
+    _searchController.clear();
+    setState(() {
+      _typedSearchQuery = '';
+      _searchQuery = '';
+    });
+  }
+
+  List<Place> _searchResults(List<Place> allPlaces) {
+    if (_searchQuery.trim().isEmpty) {
+      return const <Place>[];
+    }
+    return searchPlaces(allPlaces, _searchQuery)
+        .where((Place place) => _cityCenters.containsKey(place.city))
+        .toList(growable: false);
+  }
+
+  void _selectSearchResult(Place place) {
+    _searchDebounceTimer?.cancel();
+    _searchController.clear();
+    _searchFocusNode.unfocus();
+    setState(() {
+      _typedSearchQuery = '';
+      _searchQuery = '';
+      _selectedCity = place.city;
+      _selectedPlaceId = place.id;
+    });
+    _mapController?.animateCamera(
+      CameraUpdate.newLatLngZoom(
+        LatLng(place.lat, place.lng),
+        _myLocationZoom,
+      ),
+    );
   }
 
   Set<Marker> _buildMarkers(List<Place> places) {
@@ -163,6 +227,9 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   void dispose() {
+    _searchDebounceTimer?.cancel();
+    _searchController.dispose();
+    _searchFocusNode.dispose();
     _mapController?.dispose();
     super.dispose();
   }
@@ -170,10 +237,18 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     final PlacesRepository repository = PlacesScope.of(context);
+    final List<Place> allPlaces = repository.places;
     final List<Place> places = repository.placesByCity(_selectedCity);
+    final List<Place> searchResults = _searchResults(allPlaces);
     final Place? selectedPlace = _selectedPlaceId == null
         ? null
         : _findPlace(places, _selectedPlaceId!);
+    final double availableHeight =
+        MediaQuery.sizeOf(context).height -
+        MediaQuery.viewInsetsOf(context).bottom;
+    final double maxResultsHeight =
+        (availableHeight * 0.22).clamp(88.0, 200.0).toDouble();
+    final bool showSearchResults = _searchQuery.trim().isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -183,11 +258,13 @@ class _MapScreenState extends State<MapScreen> {
           subtitle: 'Explora lugares por ciudad',
           trailing: IconButton(
             tooltip: 'Filtros',
-            onPressed: () => _showSnack('Filtros próximamente'),
+            onPressed: () => _showSnack('Filtros no disponibles'),
             icon: const Icon(Icons.tune, color: AppColors.textLight),
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
+        _buildSearchBar(),
+        const SizedBox(height: 10),
         SizedBox(
           height: 42,
           child: ListView.separated(
@@ -205,7 +282,13 @@ class _MapScreenState extends State<MapScreen> {
             },
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 10),
+        if (showSearchResults)
+          Flexible(
+            fit: FlexFit.loose,
+            child: _buildSearchResultsPanel(searchResults, maxResultsHeight),
+          ),
+        const SizedBox(height: 12),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -281,6 +364,104 @@ class _MapScreenState extends State<MapScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: TextField(
+        controller: _searchController,
+        focusNode: _searchFocusNode,
+        textInputAction: TextInputAction.search,
+        onChanged: _onSearchChanged,
+        onEditingComplete: _onSearchEditingComplete,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+        ),
+        decoration: InputDecoration(
+          hintText: 'Buscar lugares',
+          prefixIcon: const Icon(Icons.search, color: Colors.white),
+          suffixIcon: _searchController.text.isNotEmpty
+              ? IconButton(
+                  tooltip: 'Limpiar búsqueda',
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: _clearSearch,
+                )
+              : null,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 14,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchResultsPanel(List<Place> results, double maxHeight) {
+    final double height = results.isEmpty ? 88.0 : maxHeight;
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.textDark.withValues(alpha: 0.12),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: height),
+        child: results.isEmpty
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    'No encontramos lugares con ese texto',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: AppColors.textDark,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              )
+            : ListView.separated(
+                shrinkWrap: true,
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                itemCount: results.length,
+                separatorBuilder: (_, _) => const Divider(height: 1),
+                itemBuilder: (context, index) =>
+                    _buildResultTile(results[index]),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildResultTile(Place place) {
+    return ListTile(
+      dense: true,
+      leading: Icon(
+        MockData.iconForCategory(place.category),
+        color: AppColors.teal,
+      ),
+      title: Text(
+        place.name,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+      ),
+      subtitle: Text(
+        '${place.category} · ${place.city}',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      onTap: () => _selectSearchResult(place),
     );
   }
 }
