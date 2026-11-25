@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../app_routes.dart';
+import '../data/auth_session_flow.dart';
+import '../data/supabase_auth_service.dart';
+import '../data/supabase_gate.dart';
 import '../data/user_profile_repository.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
@@ -21,6 +26,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmController = TextEditingController();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -72,16 +78,52 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return null;
   }
 
-  void _submit() {
-    if (!_formKey.currentState!.validate()) return;
-    UserProfileRepository.of(context).registerLocal(
-      name: _nameController.text.trim(),
-      email: _emailController.text.trim(),
-    );
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('¡Cuenta creada con éxito!')));
-    Navigator.pushReplacementNamed(context, AppRoutes.home);
+  Future<void> _submit() async {
+    if (_isLoading || !_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
+    final String name = _nameController.text.trim();
+    final String email = _emailController.text.trim();
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+
+    try {
+      final SupabaseClient? client = SupabaseGate.client;
+      if (client == null) {
+        UserProfileRepository.of(context)
+            .registerLocal(name: name, email: email);
+        if (!mounted) return;
+        messenger.showSnackBar(
+          const SnackBar(content: Text('¡Cuenta creada con éxito!')),
+        );
+        Navigator.pushReplacementNamed(context, AppRoutes.home);
+        return;
+      }
+
+      await SupabaseAuthService.signUpWithEmail(
+        email: email,
+        password: _passwordController.text,
+        name: name,
+        city: UserProfileRepository.of(context).city,
+      );
+      if (!mounted) return;
+      await context.read<AuthSessionFlow>().markMigrationPending(email: email);
+      if (!mounted) return;
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.checkEmail,
+        (Route<dynamic> route) => false,
+        arguments: email,
+      );
+    } on SupabaseAuthException catch (error) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
+    } on Object {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text('No se pudo crear la cuenta.')),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -149,9 +191,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 24),
                   PrimaryButton(
-                    label: 'Registrarse',
+                    label: _isLoading ? 'Creando cuenta...' : 'Registrarse',
                     icon: Icons.person_add,
-                    onPressed: _submit,
+                    onPressed: _isLoading ? null : _submit,
                   ),
                   const SizedBox(height: 8),
                   Row(

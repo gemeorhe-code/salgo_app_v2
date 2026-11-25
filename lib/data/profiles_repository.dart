@@ -6,7 +6,10 @@ import 'supabase_gate.dart';
 String _redact(Object? value) {
   final String text = value?.toString() ?? 'null';
   return text
-      .replaceAll(RegExp(r'\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+'), '[token]')
+      .replaceAll(
+        RegExp(r'\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+'),
+        '[token]',
+      )
       .replaceAll(RegExp(r'[\w.+-]+@[\w-]+\.[\w.-]+'), '[email]');
 }
 
@@ -42,10 +45,7 @@ class ProfileRecord {
 }
 
 class ProfileSyncResult {
-  const ProfileSyncResult({
-    required this.record,
-    required this.wroteLocal,
-  });
+  const ProfileSyncResult({required this.record, required this.wroteLocal});
 
   final ProfileRecord record;
   final bool wroteLocal;
@@ -66,6 +66,42 @@ class ProfilesRepository {
     required String? photoUrl,
     required String city,
     required DateTime updatedAt,
+  }) {
+    return _upsertUser(
+      user: user,
+      name: name,
+      email: email,
+      photoUrl: photoUrl,
+      city: city,
+      updatedAt: updatedAt,
+    );
+  }
+
+  Future<ProfileSyncResult?> upsertFromEmail({
+    required User user,
+    required String name,
+    required String email,
+    required String? photoUrl,
+    required String city,
+    required DateTime updatedAt,
+  }) {
+    return _upsertUser(
+      user: user,
+      name: name,
+      email: email,
+      photoUrl: photoUrl,
+      city: city,
+      updatedAt: updatedAt,
+    );
+  }
+
+  Future<ProfileSyncResult?> _upsertUser({
+    required User user,
+    required String name,
+    required String email,
+    required String? photoUrl,
+    required String city,
+    required DateTime updatedAt,
   }) async {
     final SupabaseClient? client = _client;
     if (client == null) return null;
@@ -76,8 +112,9 @@ class ProfilesRepository {
           .select()
           .eq('id', user.id);
 
-      final ProfileRecord? remote =
-          rows.isEmpty ? null : ProfileRecord.fromMap(rows.first);
+      final ProfileRecord? remote = rows.isEmpty
+          ? null
+          : ProfileRecord.fromMap(rows.first);
       if (remote != null && updatedAt.isBefore(remote.updatedAt)) {
         return ProfileSyncResult(record: remote, wroteLocal: false);
       }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../app_routes.dart';
+import '../data/auth_session_flow.dart';
 import '../data/user_profile_repository.dart';
 import '../data/notifications_repository.dart';
 import '../data/places_repository.dart';
@@ -25,8 +26,9 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final UserProfileRepository upRepository =
-        UserProfileRepository.of(context);
+    final UserProfileRepository upRepository = UserProfileRepository.of(
+      context,
+    );
     final PlacesRepository repository = PlacesScope.of(context);
 
     return SingleChildScrollView(
@@ -44,7 +46,10 @@ class ProfileScreen extends StatelessWidget {
                   listenable: upRepository,
                   builder: (context, _) {
                     return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 24,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.white,
                         borderRadius: BorderRadius.circular(24),
@@ -69,33 +74,38 @@ class ProfileScreen extends StatelessWidget {
                                 end: Alignment.bottomRight,
                                 colors: [AppColors.orange, AppColors.teal],
                               ),
-                              border: Border.all(color: AppColors.teal, width: 3),
+                              border: Border.all(
+                                color: AppColors.teal,
+                                width: 3,
+                              ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.textDark.withValues(alpha: 0.15),
+                                  color: AppColors.textDark.withValues(
+                                    alpha: 0.15,
+                                  ),
                                   blurRadius: 12,
                                   offset: const Offset(0, 6),
                                 ),
                               ],
                             ),
-                          child: upRepository.photoUrl != null
-                              ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(56),
-                                  child: Image.network(
-                                    upRepository.photoUrl!,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, _, _) => const Icon(
-                                      Icons.person,
-                                      size: 60,
-                                      color: AppColors.textLight,
+                            child: upRepository.photoUrl != null
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(56),
+                                    child: Image.network(
+                                      upRepository.photoUrl!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, _, _) => const Icon(
+                                        Icons.person,
+                                        size: 60,
+                                        color: AppColors.textLight,
+                                      ),
                                     ),
+                                  )
+                                : const Icon(
+                                    Icons.person,
+                                    size: 60,
+                                    color: AppColors.textLight,
                                   ),
-                                )
-                              : const Icon(
-                                  Icons.person,
-                                  size: 60,
-                                  color: AppColors.textLight,
-                                ),
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -166,13 +176,16 @@ class ProfileScreen extends StatelessWidget {
                   leading: const Icon(Icons.logout),
                   onPressed: () async {
                     final messenger = ScaffoldMessenger.of(context);
-                    final PreferencesRepository prefsRepo =
-                        context.read<PreferencesRepository>();
-                    final NotificationsRepository notificationsRepo =
-                        context.read<NotificationsRepository>();
+                    final PreferencesRepository prefsRepo = context
+                        .read<PreferencesRepository>();
+                    final NotificationsRepository notificationsRepo = context
+                        .read<NotificationsRepository>();
+                    final AuthSessionFlow authFlow = context
+                        .read<AuthSessionFlow>();
                     await prefsRepo.onSignedOut();
                     await notificationsRepo.onSignedOut();
                     await repository.onSignedOut();
+                    authFlow.resetCurrentUser();
                     final String? error = await upRepository.signOut();
                     if (!context.mounted) return;
                     if (error != null) {

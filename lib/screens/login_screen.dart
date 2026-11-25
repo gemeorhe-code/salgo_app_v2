@@ -1,15 +1,12 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../app_routes.dart';
+import '../data/auth_session_flow.dart';
 import '../data/google_auth_service.dart';
-import '../data/notifications_repository.dart';
-import '../data/places_scope.dart';
-import '../data/preferences_repository.dart';
 import '../data/supabase_auth_service.dart';
+import '../data/supabase_gate.dart';
 import '../data/user_profile_repository.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
@@ -60,15 +57,53 @@ class _LoginScreenState extends State<LoginScreen> {
     return null;
   }
 
-  void _submit() {
-    if (!_formKey.currentState!.validate()) return;
-    // El login con correo sigue siendo local; Supabase Auth se hará en la Fase A2.
-    UserProfileRepository.of(
-      context,
-    ).signInWithEmail(email: _emailController.text.trim());
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('¡Bienvenido a SALGO!')));
-    Navigator.pushReplacementNamed(context, AppRoutes.home);
+  Future<void> _submit() async {
+    if (_isLoading || !_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
+    final String email = _emailController.text.trim();
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+
+    try {
+      final SupabaseClient? client = SupabaseGate.client;
+      if (client == null) {
+        UserProfileRepository.of(context).signInWithEmail(email: email);
+      } else {
+        final AuthResponse response =
+            await SupabaseAuthService.signInWithPassword(
+              email: email,
+              password: _passwordController.text,
+            );
+        if (!mounted) return;
+        final User? user = response.user;
+        if (user == null) {
+          throw const SupabaseAuthException(
+            'No se pudo iniciar sesión. Inténtalo de nuevo.',
+          );
+        }
+        final AuthCompletion result = await context
+            .read<AuthSessionFlow>()
+            .completeEmailSignIn(user: user);
+        if (!mounted) return;
+        if (result.message != null) {
+          messenger.showSnackBar(SnackBar(content: Text(result.message!)));
+        }
+      }
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text('¡Bienvenido a SALGO!')),
+      );
+      Navigator.pushReplacementNamed(context, AppRoutes.home);
+    } on SupabaseAuthException catch (error) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
+    } on Object {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text('No se pudo iniciar sesión.')),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _signInWithGoogle() async {
@@ -95,23 +130,18 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      final String? syncError = await UserProfileRepository.of(
-        context,
-      ).completeGoogleSignIn(googleUser: user, supabaseUser: supabaseUser);
+      final AuthCompletion result = await context
+          .read<AuthSessionFlow>()
+          .completeGoogleSignIn(googleUser: user, user: supabaseUser);
       if (!mounted) return;
 
-      if (syncError != null) {
-        messenger.showSnackBar(SnackBar(content: Text(syncError)));
+      if (result.message != null) {
+        messenger.showSnackBar(SnackBar(content: Text(result.message!)));
       } else {
         messenger.showSnackBar(
           SnackBar(content: Text('¡Bienvenido, ${user.name}!')),
         );
       }
-      unawaited(context.read<PreferencesRepository>().onSignedIn(supabaseUser.id));
-      unawaited(
-        context.read<NotificationsRepository>().onSignedIn(supabaseUser.id),
-      );
-      unawaited(PlacesScope.of(context).onSignedIn(supabaseUser.id));
       Navigator.pushReplacementNamed(context, AppRoutes.home);
     } on GoogleAuthException catch (error) {
       if (!mounted) return;
@@ -128,7 +158,6 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) setState(() => _isLoading = false);
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -182,7 +211,23 @@ class _LoginScreenState extends State<LoginScreen> {
                     icon: Icons.login,
                     onPressed: _isLoading ? null : _submit,
                   ),
-                  const SizedBox(height: 14),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => Navigator.pushNamed(
+                        context,
+                        AppRoutes.forgotPassword,
+                      ),
+                      child: const Text(
+                        '¿Olvidaste tu contraseña?',
+                        style: TextStyle(
+                          color: AppColors.orange,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
                   SecondaryButton(
                     label: _isLoading
                         ? 'Conectando con Google...'

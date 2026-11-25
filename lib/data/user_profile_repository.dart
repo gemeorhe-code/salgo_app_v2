@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -61,7 +61,8 @@ class UserProfileRepository extends ChangeNotifier {
         _city = data['city'] as String? ?? _city;
         _photoUrl = data['photoUrl'] as String?;
         _isSignedIn = data['isSignedIn'] as bool? ?? false;
-        _hasLocalProfile = data['hasLocalProfile'] as bool? ??
+        _hasLocalProfile =
+            data['hasLocalProfile'] as bool? ??
             (_name != _defaultName || _email != _defaultEmail);
         _nameEdited = data['nameEdited'] as bool? ?? false;
         _cityEdited = data['cityEdited'] as bool? ?? false;
@@ -161,14 +162,15 @@ class UserProfileRepository extends ChangeNotifier {
       nextName = googleUser.name;
     }
 
-    final ProfileSyncResult? result = await ProfilesRepository().upsertFromGoogle(
-      user: supabaseUser,
-      name: nextName,
-      email: nextEmail,
-      photoUrl: nextPhoto,
-      city: cityToUpload,
-      updatedAt: _updatedAt,
-    );
+    final ProfileSyncResult? result = await ProfilesRepository()
+        .upsertFromGoogle(
+          user: supabaseUser,
+          name: nextName,
+          email: nextEmail,
+          photoUrl: nextPhoto,
+          city: cityToUpload,
+          updatedAt: _updatedAt,
+        );
 
     if (result != null) {
       if (!result.wroteLocal) {
@@ -190,8 +192,8 @@ class UserProfileRepository extends ChangeNotifier {
     _migratedUserIds.add(supabaseUser.id);
     if (firstLogin) {
       _nameEdited = false;
-      _cityEdited = cityToUpload.trim().isNotEmpty &&
-          cityToUpload != 'Bucaramanga';
+      _cityEdited =
+          cityToUpload.trim().isNotEmpty && cityToUpload != 'Bucaramanga';
     }
     _rememberName(_email, _name);
     _persist();
@@ -201,6 +203,73 @@ class UserProfileRepository extends ChangeNotifier {
       return 'No se pudo sincronizar el perfil con Supabase. Tus datos siguen guardados en el dispositivo.';
     }
     return null;
+  }
+
+  Future<String?> completeEmailSignIn({
+    required User supabaseUser,
+    required String name,
+    required String email,
+    required String city,
+  }) async {
+    final bool firstLogin = !_migratedUserIds.contains(supabaseUser.id);
+    final String cityToUpload = _city.trim().isEmpty ? city : _city;
+    final Map<String, dynamic>? metadata = supabaseUser.userMetadata;
+
+    String nextName = firstLogin && !_nameEdited ? name : _name;
+    String nextEmail = email.trim().isEmpty ? _email : email;
+    String? nextPhoto =
+        metadata?['avatar_url'] as String? ??
+        metadata?['picture'] as String? ??
+        _photoUrl;
+
+    final ProfileSyncResult? result = await ProfilesRepository()
+        .upsertFromEmail(
+          user: supabaseUser,
+          name: nextName,
+          email: nextEmail,
+          photoUrl: nextPhoto,
+          city: cityToUpload,
+          updatedAt: _updatedAt,
+        );
+
+    if (result != null) {
+      if (!result.wroteLocal) {
+        nextName = result.record.name;
+        nextEmail = result.record.email;
+        nextPhoto = result.record.avatarUrl;
+        _city = result.record.city;
+      }
+      _updatedAt = result.record.updatedAt;
+    } else {
+      _touch();
+    }
+
+    _name = nextName;
+    _email = nextEmail;
+    _photoUrl = nextPhoto;
+    _hasLocalProfile = true;
+    _isSignedIn = true;
+    _migratedUserIds.add(supabaseUser.id);
+    if (firstLogin) {
+      _nameEdited = false;
+      _cityEdited =
+          cityToUpload.trim().isNotEmpty && cityToUpload != 'Bucaramanga';
+    }
+    _rememberName(_email, _name);
+    _persist();
+    notifyListeners();
+
+    if (result == null) {
+      return 'No se pudo sincronizar el perfil con Supabase. Tus datos siguen guardados en el dispositivo.';
+    }
+    return null;
+  }
+
+  void clearLocalSessionFlag() {
+    if (!_isSignedIn) return;
+    _isSignedIn = false;
+    _persist();
+    notifyListeners();
   }
 
   Future<String?> signOut() async {
@@ -239,21 +308,23 @@ class UserProfileRepository extends ChangeNotifier {
   void _touch() => _updatedAt = DateTime.now().toUtc();
 
   void _persist() {
-    unawaited(_preferences?.setString(
-      _storageKey,
-      jsonEncode(<String, dynamic>{
-        'name': _name,
-        'email': _email,
-        'city': _city,
-        'photoUrl': _photoUrl,
-        'isSignedIn': _isSignedIn,
-        'hasLocalProfile': _hasLocalProfile,
-        'emailNames': _emailNames,
-        'nameEdited': _nameEdited,
-        'cityEdited': _cityEdited,
-        'updatedAt': _updatedAt.toIso8601String(),
-        'migratedUserIds': _migratedUserIds.toList(),
-      }),
-    ));
+    unawaited(
+      _preferences?.setString(
+        _storageKey,
+        jsonEncode(<String, dynamic>{
+          'name': _name,
+          'email': _email,
+          'city': _city,
+          'photoUrl': _photoUrl,
+          'isSignedIn': _isSignedIn,
+          'hasLocalProfile': _hasLocalProfile,
+          'emailNames': _emailNames,
+          'nameEdited': _nameEdited,
+          'cityEdited': _cityEdited,
+          'updatedAt': _updatedAt.toIso8601String(),
+          'migratedUserIds': _migratedUserIds.toList(),
+        }),
+      ),
+    );
   }
 }
