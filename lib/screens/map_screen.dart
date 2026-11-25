@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../app_routes.dart';
+import '../data/location_service.dart';
 import '../data/mock_data.dart';
 import '../data/places_repository.dart';
 import '../data/places_scope.dart';
@@ -11,7 +14,9 @@ import '../widgets/place_image.dart';
 import '../widgets/salgo_header.dart';
 
 class MapScreen extends StatefulWidget {
-  const MapScreen({super.key});
+  const MapScreen({super.key, this.locationService});
+
+  final LocationService? locationService;
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -25,10 +30,13 @@ class _MapScreenState extends State<MapScreen> {
   };
 
   static const double _cityZoom = 13;
+  static const double _myLocationZoom = 16;
 
+  late final LocationService _locationService;
   String _selectedCity = MockData.cities.first;
   int? _selectedPlaceId;
   GoogleMapController? _mapController;
+  bool _myLocationEnabled = false;
 
   LatLng get _target => _cityCenters[_selectedCity] ?? _cityCenters.values.first;
 
@@ -36,6 +44,22 @@ class _MapScreenState extends State<MapScreen> {
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _showSnackWithAction(
+    String message,
+    String actionLabel,
+    VoidCallback onPressed,
+  ) {
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: const Duration(seconds: 3),
+          action: SnackBarAction(label: actionLabel, onPressed: onPressed),
+        ),
+      );
   }
 
   void _selectCity(String city) {
@@ -92,6 +116,49 @@ class _MapScreenState extends State<MapScreen> {
 
   void _zoomOut() {
     _mapController?.animateCamera(CameraUpdate.zoomOut());
+  }
+
+  Future<void> _goToMyLocation() async {
+    final LocationOutcome outcome = await resolveCurrentLocation(
+      _locationService,
+    );
+
+    if (!mounted) return;
+
+    switch (outcome) {
+      case LocationGpsDisabled():
+        _showSnackWithAction(
+          'El GPS está apagado. Actívalo para ver tu ubicación.',
+          'Abrir ajustes',
+          () => unawaited(_locationService.openLocationSettings()),
+        );
+      case LocationPermissionDenied():
+        _showSnack('No pudimos acceder a tu ubicación sin permiso.');
+      case LocationPermissionDeniedForever():
+        _showSnackWithAction(
+          'El permiso está desactivado. Actívalo en ajustes de la app.',
+          'Abrir ajustes',
+          () => unawaited(_locationService.openAppSettings()),
+        );
+      case LocationTimeout():
+      case LocationFailure():
+        _showSnack('No pudimos obtener tu ubicación. Inténtalo de nuevo.');
+      case LocationSuccess(:final coordinates):
+        setState(() => _myLocationEnabled = true);
+        _mapController?.animateCamera(
+          CameraUpdate.newLatLngZoom(
+            LatLng(coordinates.latitude, coordinates.longitude),
+            _myLocationZoom,
+          ),
+        );
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _locationService =
+        widget.locationService ?? const GeolocatorLocationService();
   }
 
   @override
@@ -156,6 +223,7 @@ class _MapScreenState extends State<MapScreen> {
                       onTap: (_) => _clearSelection(),
                       markers: _buildMarkers(places),
                       zoomControlsEnabled: false,
+                      myLocationEnabled: _myLocationEnabled,
                       myLocationButtonEnabled: false,
                       mapToolbarEnabled: false,
                       compassEnabled: false,
@@ -171,6 +239,12 @@ class _MapScreenState extends State<MapScreen> {
                       bottom: selectedPlace == null ? 12 : 168,
                       child: Column(
                         children: [
+                          _MapActionButton(
+                            icon: Icons.my_location,
+                            tooltip: 'Mi ubicación',
+                            onTap: _goToMyLocation,
+                          ),
+                          const SizedBox(height: 8),
                           _MapActionButton(
                             icon: Icons.add,
                             tooltip: 'Acercar',
