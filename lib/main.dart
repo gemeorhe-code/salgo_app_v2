@@ -54,22 +54,24 @@ Future<void> main() async {
 
   final UserProfileRepository userProfile = UserProfileRepository();
   await userProfile.init();
-  await GoogleAuthService.initialize();
+  await GoogleAuthService.initialize().catchError((Object _) async {});
 
   final LocalAuthMigration migration = LocalAuthMigration(storage: storage);
   final bool hasSupabaseSession = SupabaseGate.client?.auth.currentUser != null;
   if (!hasSupabaseSession) {
-    await migration.ensurePendingFromLocalData();
+    await migration
+        .ensurePendingFromLocalData()
+        .catchError((Object _) async {});
     userProfile.clearLocalSessionFlag();
   }
 
   final PreferencesRepository preferences = PreferencesRepository();
-  await preferences.init(storage);
+  await preferences.init(storage).catchError((Object _) async {});
 
   final NotificationsRepository notifications = NotificationsRepository(
     preferences: preferences,
   );
-  await notifications.init(storage);
+  await notifications.init(storage).catchError((Object _) async {});
 
   runApp(
     SalgoApp(
@@ -131,8 +133,8 @@ class _SalgoAppState extends State<SalgoApp> {
       migration: _migration,
     );
     _authNotice.addListener(_handleAuthNotice);
-    unawaited(_repository.init());
-    unawaited(_loadRemoteState());
+    unawaited(_repository.init().catchError((Object _) async {}));
+    unawaited(_loadRemoteState().catchError((Object _) async {}));
     _subscribeToAuth();
   }
 
@@ -140,14 +142,18 @@ class _SalgoAppState extends State<SalgoApp> {
     final User? user = SupabaseGate.client?.auth.currentUser;
     if (user == null) return;
     _lastSignedInUserId = user.id;
-    await _authFlow.completeEmailSignIn(user: user);
+    await _authFlow.completeEmailSignIn(user: user).catchError(
+      (Object _) async => const AuthCompletion(started: true),
+    );
   }
 
   void _subscribeToAuth() {
     final SupabaseClient? client = SupabaseGate.client;
     if (client == null) return;
     _authSubscription = client.auth.onAuthStateChange.listen(
-      (AuthState state) => unawaited(_handleAuthState(state)),
+      (AuthState state) => unawaited(
+        _handleAuthState(state).catchError((Object _) async {}),
+      ),
       onError: (Object error, StackTrace stackTrace) {
         unawaited(
           _migration.pendingEmail().then((String? email) {
@@ -155,6 +161,11 @@ class _SalgoAppState extends State<SalgoApp> {
               'El enlace venció o no es válido. Solicita uno nuevo.',
               route: email != null ? AppRoutes.checkEmail : AppRoutes.login,
               arguments: email,
+            );
+          }).catchError((Object _) async {
+            _showNotice(
+              'El enlace venció o no es válido. Solicita uno nuevo.',
+              route: AppRoutes.login,
             );
           }),
         );
@@ -180,9 +191,16 @@ class _SalgoAppState extends State<SalgoApp> {
     if (event == AuthChangeEvent.signedIn) {
       if (_authNotice.recoveryInProgress) return;
       if (user == null) return;
-      final AuthCompletion result = await _authFlow.completeEmailSignIn(
-        user: user,
-      );
+      late final AuthCompletion result;
+      try {
+        result = await _authFlow.completeEmailSignIn(user: user);
+      } on Object {
+        result = const AuthCompletion(
+          started: true,
+          message:
+              'No se pudo completar el ingreso. Revisa tu conexión e inténtalo de nuevo.',
+        );
+      }
       if (!mounted) return;
       if (result.message != null) _showNotice(result.message!);
       if (!result.started) return;

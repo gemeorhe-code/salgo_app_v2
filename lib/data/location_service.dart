@@ -92,26 +92,26 @@ class LocationSuccess extends LocationOutcome {
 }
 
 Future<LocationOutcome> resolveCurrentLocation(LocationService service) async {
-  if (!await service.isLocationServiceEnabled()) {
-    return const LocationGpsDisabled();
-  }
-
-  LocationPermission permission = await service.checkPermission();
-  if (permission == LocationPermission.denied) {
-    permission = await service.requestPermission();
-  }
-  if (permission == LocationPermission.denied) {
-    return const LocationPermissionDenied();
-  }
-  if (permission == LocationPermission.deniedForever) {
-    return const LocationPermissionDeniedForever();
-  }
-  if (permission != LocationPermission.always &&
-      permission != LocationPermission.whileInUse) {
-    return const LocationFailure();
-  }
-
   try {
+    if (!await service.isLocationServiceEnabled()) {
+      return const LocationGpsDisabled();
+    }
+
+    LocationPermission permission = await service.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await service.requestPermission();
+    }
+    if (permission == LocationPermission.denied) {
+      return const LocationPermissionDenied();
+    }
+    if (permission == LocationPermission.deniedForever) {
+      return const LocationPermissionDeniedForever();
+    }
+    if (permission != LocationPermission.always &&
+        permission != LocationPermission.whileInUse) {
+      return const LocationFailure();
+    }
+
     final LocationCoordinates coordinates = await service.getCurrentPosition();
     return LocationSuccess(coordinates);
   } on TimeoutException {

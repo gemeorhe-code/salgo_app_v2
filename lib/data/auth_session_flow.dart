@@ -32,6 +32,16 @@ class AuthSessionFlow {
   final Set<String> _completed = <String>{};
   final Map<String, Future<AuthCompletion>> _inFlight =
       <String, Future<AuthCompletion>>{};
+  static const Duration _completionTimeout = Duration(seconds: 20);
+  static const Duration _syncTimeout = Duration(seconds: 12);
+  static const String _syncErrorMessage =
+      'No se pudo completar el ingreso. Revisa tu conexión e inténtalo de nuevo.';
+
+  static String? _metadataString(Object? metadata, String key) {
+    if (metadata is! Map) return null;
+    final Object? value = metadata[key];
+    return value is String && value.isNotEmpty ? value : null;
+  }
 
   Future<AuthCompletion> completeGoogleSignIn({
     required GoogleAuthUser googleUser,
@@ -51,14 +61,14 @@ class AuthSessionFlow {
     String? name,
     String? city,
   }) {
-    final Map<String, dynamic>? metadata = user.userMetadata;
+    final Object? metadata = user.userMetadata;
     final String resolvedName =
         name ??
-        metadata?['full_name'] as String? ??
-        metadata?['name'] as String? ??
+        _metadataString(metadata, 'full_name') ??
+        _metadataString(metadata, 'name') ??
         userProfile.name;
     final String resolvedCity =
-        city ?? metadata?['city'] as String? ?? userProfile.city;
+        city ?? _metadataString(metadata, 'city') ?? userProfile.city;
     final String resolvedEmail = user.email ?? userProfile.email;
 
     return completeSignIn(
@@ -86,12 +96,20 @@ class AuthSessionFlow {
     final Future<AuthCompletion> operation = _perform(
       userId,
       profileSync: profileSync,
+    ).timeout(
+      _completionTimeout,
+      onTimeout: () => AuthCompletion(
+        started: true,
+        message: _syncErrorMessage,
+      ),
     );
     _inFlight[userId] = operation;
     try {
       final AuthCompletion result = await operation;
       if (result.message == null) _completed.add(userId);
       return result;
+    } on Object {
+      return AuthCompletion(started: true, message: _syncErrorMessage);
     } finally {
       _inFlight.remove(userId);
     }
@@ -101,35 +119,39 @@ class AuthSessionFlow {
     String userId, {
     Future<String?> Function()? profileSync,
   }) async {
-    if (profileSync != null) {
-      final String? profileError = await profileSync();
-      if (profileError != null) {
-        return AuthCompletion(started: true, message: profileError);
+    try {
+      if (profileSync != null) {
+        final String? profileError = await profileSync().timeout(_syncTimeout);
+        if (profileError != null) {
+          return AuthCompletion(started: true, message: profileError);
+        }
       }
-    }
 
-    if (await _migration.isPending()) {
-      final bool uploaded = await _migration.uploadNotificationStates(
-        userId: userId,
-      );
-      if (!uploaded) {
-        return const AuthCompletion(
-          started: true,
-          message:
-              'No se pudieron subir tus datos locales. Se conservarán '
-              'en este dispositivo y se intentará de nuevo en el próximo ingreso.',
-        );
+      if (await _migration.isPending().timeout(_syncTimeout)) {
+        final bool uploaded = await _migration
+            .uploadNotificationStates(userId: userId)
+            .timeout(_syncTimeout);
+        if (!uploaded) {
+          return const AuthCompletion(
+            started: true,
+            message:
+                'No se pudieron subir tus datos locales. Se conservarán '
+                'en este dispositivo y se intentará de nuevo en el próximo ingreso.',
+          );
+        }
       }
+
+      await Future.wait<void>(<Future<void>>[
+        preferences.onSignedIn(userId),
+        notifications.onSignedIn(userId),
+        places.onSignedIn(userId),
+      ]).timeout(_syncTimeout);
+      await _migration.clear().timeout(_syncTimeout);
+
+      return const AuthCompletion(started: true);
+    } on Object {
+      return AuthCompletion(started: true, message: _syncErrorMessage);
     }
-
-    await Future.wait<void>(<Future<void>>[
-      preferences.onSignedIn(userId),
-      notifications.onSignedIn(userId),
-      places.onSignedIn(userId),
-    ]);
-    await _migration.clear();
-
-    return const AuthCompletion(started: true);
   }
 
   Future<void> markMigrationPending({String? email}) =>

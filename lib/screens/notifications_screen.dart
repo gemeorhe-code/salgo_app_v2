@@ -170,21 +170,43 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(_context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   Future<void> _setGlobalEnabled(bool enabled) async {
     setState(() => _isMarking = true);
-    await _notifRepo.setGlobalEnabled(enabled);
-    if (mounted) setState(() => _isMarking = false);
+    try {
+      await _notifRepo.setGlobalEnabled(enabled);
+    } on Object {
+      _showError(
+        'No se pudo actualizar la preferencia. Se guardó en este dispositivo.',
+      );
+    } finally {
+      if (mounted) setState(() => _isMarking = false);
+    }
   }
 
   Future<void> _markAllRead() async {
     setState(() => _isMarking = true);
-    await _notifRepo.markAllRead();
-    if (!mounted) return;
-    setState(() => _isMarking = false);
+    try {
+      await _notifRepo.markAllRead();
+    } on Object {
+      _showError('No se pudo marcar todo como leído. Se guardó en este dispositivo.');
+    } finally {
+      if (mounted) setState(() => _isMarking = false);
+    }
   }
 
   Future<void> _onNotificationTap(AppNotification notif) async {
-    await _notifRepo.markRead(notif.placeId);
+    try {
+      await _notifRepo.markRead(notif.placeId);
+    } on Object {
+      _showError('No se pudo marcar la notificación como leída.');
+    }
     if (!mounted) return;
     final place = PlacesScope.of(_context).placeById(notif.placeId);
     if (place != null) {
@@ -195,9 +217,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Future<void> _onDismiss(AppNotification notif) async {
     setState(() => _isMarking = true);
-    await _notifRepo.markDismissed(notif.placeId);
-    if (!mounted) return;
-    setState(() => _isMarking = false);
+    bool failed = false;
+    try {
+      await _notifRepo.markDismissed(notif.placeId);
+    } on Object {
+      failed = true;
+      _showError('No se pudo eliminar la notificación. Se guardó en este dispositivo.');
+    } finally {
+      if (mounted) setState(() => _isMarking = false);
+    }
+    if (!mounted || failed) return;
     ScaffoldMessenger.of(_context).clearSnackBars();
     ScaffoldMessenger.of(_context)
         .showSnackBar(const SnackBar(content: Text('Notificación eliminada')));

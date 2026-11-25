@@ -183,38 +183,61 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Future<void> _goToMyLocation() async {
-    final LocationOutcome outcome = await resolveCurrentLocation(
-      _locationService,
-    );
+    try {
+      final LocationOutcome outcome = await resolveCurrentLocation(
+        _locationService,
+      );
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    switch (outcome) {
-      case LocationGpsDisabled():
-        _showSnackWithAction(
-          'El GPS está apagado. Actívalo para ver tu ubicación.',
-          'Abrir ajustes',
-          () => unawaited(_locationService.openLocationSettings()),
-        );
-      case LocationPermissionDenied():
-        _showSnack('No pudimos acceder a tu ubicación sin permiso.');
-      case LocationPermissionDeniedForever():
-        _showSnackWithAction(
-          'El permiso está desactivado. Actívalo en ajustes de la app.',
-          'Abrir ajustes',
-          () => unawaited(_locationService.openAppSettings()),
-        );
-      case LocationTimeout():
-      case LocationFailure():
-        _showSnack('No pudimos obtener tu ubicación. Inténtalo de nuevo.');
-      case LocationSuccess(:final coordinates):
-        setState(() => _myLocationEnabled = true);
-        _mapController?.animateCamera(
-          CameraUpdate.newLatLngZoom(
-            LatLng(coordinates.latitude, coordinates.longitude),
-            _myLocationZoom,
-          ),
-        );
+      switch (outcome) {
+        case LocationGpsDisabled():
+          _showSnackWithAction(
+            'El GPS está apagado. Actívalo para ver tu ubicación.',
+            'Abrir ajustes',
+            () => unawaited(_openLocationSettingsSafely()),
+          );
+        case LocationPermissionDenied():
+          _showSnack('No pudimos acceder a tu ubicación sin permiso.');
+        case LocationPermissionDeniedForever():
+          _showSnackWithAction(
+            'El permiso está desactivado. Actívalo en ajustes de la app.',
+            'Abrir ajustes',
+            () => unawaited(_openAppSettingsSafely()),
+          );
+        case LocationTimeout():
+        case LocationFailure():
+          _showSnack('No pudimos obtener tu ubicación. Inténtalo de nuevo.');
+        case LocationSuccess(:final coordinates):
+          setState(() => _myLocationEnabled = true);
+          _mapController?.animateCamera(
+            CameraUpdate.newLatLngZoom(
+              LatLng(coordinates.latitude, coordinates.longitude),
+              _myLocationZoom,
+            ),
+          );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      _showSnack('No pudimos obtener tu ubicación. Inténtalo de nuevo.');
+    }
+  }
+
+  Future<void> _openLocationSettingsSafely() async {
+    try {
+      await _locationService.openLocationSettings();
+    } catch (_) {
+      if (!mounted) return;
+      _showSnack('No pudimos abrir los ajustes de ubicación.');
+    }
+  }
+
+  Future<void> _openAppSettingsSafely() async {
+    try {
+      await _locationService.openAppSettings();
+    } catch (_) {
+      if (!mounted) return;
+      _showSnack('No pudimos abrir los ajustes de la app.');
     }
   }
 

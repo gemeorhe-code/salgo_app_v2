@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -13,8 +15,17 @@ import '../theme/app_theme.dart';
 import '../widgets/salgo_header.dart';
 import '../widgets/secondary_button.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  static const Duration _signOutTimeout = Duration(seconds: 10);
+
+  bool _isSigningOut = false;
 
   void _editProfile(BuildContext context) {
     Navigator.pushNamed(context, AppRoutes.editProfile);
@@ -22,6 +33,43 @@ class ProfileScreen extends StatelessWidget {
 
   void _showNotifications(BuildContext context) {
     Navigator.pushNamed(context, AppRoutes.notifications);
+  }
+
+  Future<void> _signOut(BuildContext context, PlacesRepository repository) async {
+    if (_isSigningOut) return;
+    setState(() => _isSigningOut = true);
+    final messenger = ScaffoldMessenger.of(context);
+    String? error;
+    try {
+      final PreferencesRepository prefsRepo = context
+          .read<PreferencesRepository>();
+      final NotificationsRepository notificationsRepo = context
+          .read<NotificationsRepository>();
+      final AuthSessionFlow authFlow = context.read<AuthSessionFlow>();
+      final UserProfileRepository upRepository = UserProfileRepository.of(
+        context,
+      );
+      await prefsRepo.onSignedOut().timeout(_signOutTimeout);
+      await notificationsRepo.onSignedOut().timeout(_signOutTimeout);
+      await repository.onSignedOut().timeout(_signOutTimeout);
+      authFlow.resetCurrentUser();
+      error = await upRepository.signOut().timeout(_signOutTimeout);
+    } on Object {
+      error =
+          'No se pudo cerrar la sesión correctamente. Se cerrará la app localmente.';
+    } finally {
+      if (context.mounted) {
+        setState(() => _isSigningOut = false);
+        if (error != null) {
+          messenger.showSnackBar(SnackBar(content: Text(error)));
+        }
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.login,
+          (Route<dynamic> route) => false,
+        );
+      }
+    }
   }
 
   @override
@@ -172,31 +220,11 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 SecondaryButton(
-                  label: 'Cerrar sesión',
+                  label: _isSigningOut ? 'Cerrando sesión…' : 'Cerrar sesión',
                   leading: const Icon(Icons.logout),
-                  onPressed: () async {
-                    final messenger = ScaffoldMessenger.of(context);
-                    final PreferencesRepository prefsRepo = context
-                        .read<PreferencesRepository>();
-                    final NotificationsRepository notificationsRepo = context
-                        .read<NotificationsRepository>();
-                    final AuthSessionFlow authFlow = context
-                        .read<AuthSessionFlow>();
-                    await prefsRepo.onSignedOut();
-                    await notificationsRepo.onSignedOut();
-                    await repository.onSignedOut();
-                    authFlow.resetCurrentUser();
-                    final String? error = await upRepository.signOut();
-                    if (!context.mounted) return;
-                    if (error != null) {
-                      messenger.showSnackBar(SnackBar(content: Text(error)));
-                    }
-                    Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      AppRoutes.login,
-                      (route) => false,
-                    );
-                  },
+                  onPressed: _isSigningOut
+                      ? null
+                      : () => unawaited(_signOut(context, repository)),
                 ),
               ],
             ),

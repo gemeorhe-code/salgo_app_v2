@@ -44,6 +44,21 @@ class UserProfileRepository extends ChangeNotifier {
   String? get photoUrl => _photoUrl;
   bool get isSignedIn => _isSignedIn;
 
+  Future<void> _resetLocalProfile() async {
+    _name = _neutralName;
+    _email = '';
+    _city = 'Bucaramanga';
+    _photoUrl = null;
+    _isSignedIn = false;
+    _hasLocalProfile = false;
+    _nameEdited = false;
+    _cityEdited = false;
+    _updatedAt = DateTime.now().toUtc();
+    _emailNames.clear();
+    _migratedUserIds.clear();
+    await _preferences?.remove(_storageKey);
+  }
+
   Future<void> init() async {
     try {
       _preferences = await SharedPreferences.getInstance();
@@ -85,8 +100,8 @@ class UserProfileRepository extends ChangeNotifier {
             if (id is String && id.isNotEmpty) _migratedUserIds.add(id);
           }
         }
-      } on FormatException {
-        await _preferences?.remove(_storageKey);
+      } on Object {
+        await _resetLocalProfile();
       }
     }
 

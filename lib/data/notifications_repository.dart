@@ -33,6 +33,7 @@ class NotificationsRepository extends ChangeNotifier {
   }
 
   static const String _storageKey = 'salgo_notifications_state';
+  static const Duration _networkTimeout = Duration(seconds: 10);
 
   final PreferencesRepository _prefs;
   SharedPreferences? _storage;
@@ -120,16 +121,22 @@ class NotificationsRepository extends ChangeNotifier {
     syncError.value = null;
     notifyListeners();
 
-    final List<NotificationState>? states = await remote.fetchAll(userId);
-    if (states == null) {
+    try {
+      final List<NotificationState>? states = await remote
+          .fetchAll(userId)
+          .timeout(_networkTimeout);
+      if (states == null) {
+        syncError.value = 'No se pudieron cargar tus estados de notificación.';
+      } else {
+        _applyStates(states);
+        refresh();
+      }
+    } on Object {
       syncError.value = 'No se pudieron cargar tus estados de notificación.';
-    } else {
-      _applyStates(states);
-      refresh();
+    } finally {
+      _isLoadingStates = false;
+      notifyListeners();
     }
-
-    _isLoadingStates = false;
-    notifyListeners();
   }
 
   Future<void> onSignedOut() async {
@@ -213,8 +220,15 @@ class NotificationsRepository extends ChangeNotifier {
     final String? userId = _userId;
     final NotificationStatesRepository? remote = _remote;
     if (userId == null || remote == null) return;
-    final String? error = await operation(remote, userId);
-    if (error != null) syncError.value = error;
+    try {
+      final String? error = await operation(
+        remote,
+        userId,
+      ).timeout(_networkTimeout);
+      if (error != null) syncError.value = error;
+    } on Object {
+      syncError.value = 'No se pudo sincronizar el cambio. Se guardó en este dispositivo.';
+    }
   }
 
   void _applyStates(List<NotificationState> states) {
