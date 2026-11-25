@@ -161,16 +161,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             textAlign: TextAlign.center,
                             style: AppTheme.display(fontSize: 24),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            upRepository.email,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: AppColors.textDark.withValues(alpha: 0.7),
-                              fontWeight: FontWeight.w500,
-                              fontSize: 15,
+                          if (upRepository.email.trim().isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              upRepository.email,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: AppColors.textDark.withValues(
+                                  alpha: 0.7,
+                                ),
+                                fontWeight: FontWeight.w500,
+                                fontSize: 15,
+                              ),
                             ),
-                          ),
+                          ],
                         ],
                       ),
                     );

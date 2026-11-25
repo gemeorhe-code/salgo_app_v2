@@ -279,11 +279,6 @@ class _MapScreenState extends State<MapScreen> {
         SalgoHeader(
           title: 'Mapa',
           subtitle: 'Explora lugares por ciudad',
-          trailing: IconButton(
-            tooltip: 'Filtros',
-            onPressed: () => _showSnack('Filtros no disponibles'),
-            icon: const Icon(Icons.tune, color: AppColors.textLight),
-          ),
         ),
         const SizedBox(height: 12),
         _buildSearchBar(),

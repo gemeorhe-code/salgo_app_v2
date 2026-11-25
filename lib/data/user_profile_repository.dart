@@ -21,9 +21,10 @@ class UserProfileRepository extends ChangeNotifier {
   }
 
   static const String _storageKey = 'salgo_user_profile';
-  static const String _defaultName = 'Usuario SALGO';
-  static const String _defaultEmail = 'usuario@salgo.com';
-  static const String _neutralName = 'Usuario';
+  static const String _defaultName = 'Usuario';
+  static const String _defaultEmail = '';
+  static const String _legacyDefaultName = 'Usuario SALGO';
+  static const String _legacyDefaultEmail = 'usuario@salgo.com';
 
   String _name = _defaultName;
   String _email = _defaultEmail;
@@ -45,8 +46,8 @@ class UserProfileRepository extends ChangeNotifier {
   bool get isSignedIn => _isSignedIn;
 
   Future<void> _resetLocalProfile() async {
-    _name = _neutralName;
-    _email = '';
+    _name = _defaultName;
+    _email = _defaultEmail;
     _city = 'Bucaramanga';
     _photoUrl = null;
     _isSignedIn = false;
@@ -71,14 +72,17 @@ class UserProfileRepository extends ChangeNotifier {
       try {
         final Map<String, dynamic> data =
             jsonDecode(raw) as Map<String, dynamic>;
-        _name = data['name'] as String? ?? _defaultName;
-        _email = data['email'] as String? ?? _defaultEmail;
+        final String storedName = data['name'] as String? ?? _defaultName;
+        final String storedEmail = data['email'] as String? ?? _defaultEmail;
+        _name = storedName == _legacyDefaultName ? _defaultName : storedName;
+        _email =
+            storedEmail == _legacyDefaultEmail ? _defaultEmail : storedEmail;
         _city = data['city'] as String? ?? _city;
         _photoUrl = data['photoUrl'] as String?;
         _isSignedIn = data['isSignedIn'] as bool? ?? false;
         _hasLocalProfile =
             data['hasLocalProfile'] as bool? ??
-            (_name != _defaultName || _email != _defaultEmail);
+            (_name != _defaultName || _email.isNotEmpty);
         _nameEdited = data['nameEdited'] as bool? ?? false;
         _cityEdited = data['cityEdited'] as bool? ?? false;
         _updatedAt =
@@ -149,7 +153,7 @@ class UserProfileRepository extends ChangeNotifier {
   void signInWithEmail({required String email}) {
     final String normalizedEmail = _normalizeEmail(email);
     final String? rememberedName = _emailNames[normalizedEmail];
-    _name = rememberedName ?? _neutralName;
+    _name = rememberedName ?? _defaultName;
     _email = email;
     _photoUrl = null;
     _hasLocalProfile = true;

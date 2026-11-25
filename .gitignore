@@ -49,5 +49,9 @@ app.*.map.json
 
 # Local secrets (Google Maps API key)
 .env
+.env.local
 android/key.properties
+client_secret.json
 client_secret_*.json
+google-services.json
+GoogleService-Info.plist
