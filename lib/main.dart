@@ -99,6 +99,14 @@ class _SalgoAppState extends State<SalgoApp> {
       preferences: _preferences,
     );
     unawaited(_repository.init());
+    unawaited(_loadRemoteState());
+  }
+
+  Future<void> _loadRemoteState() async {
+    final String? userId = SupabaseGate.client?.auth.currentUser?.id;
+    if (userId == null) return;
+    await _preferences.onSignedIn(userId);
+    await _notifications.onSignedIn(userId);
   }
 
   @override

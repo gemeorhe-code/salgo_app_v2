@@ -4,8 +4,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/notification_state.dart';
 import '../models/place.dart';
 import 'mock_data.dart';
+import 'notification_states_repository.dart';
 import 'preferences_repository.dart';
 
 class AppNotification {
@@ -26,12 +28,17 @@ class AppNotification {
 
 class NotificationsRepository extends ChangeNotifier {
   NotificationsRepository({PreferencesRepository? preferences})
-      : _prefs = preferences ?? PreferencesRepository();
+    : _prefs = preferences ?? PreferencesRepository();
 
   static const String _storageKey = 'salgo_notifications_state';
 
   final PreferencesRepository _prefs;
   SharedPreferences? _storage;
+  NotificationStatesRepository? _remote;
+  String? _userId;
+  bool _isLoadingStates = false;
+  bool notificationsEnabled = true;
+  final ValueNotifier<String?> syncError = ValueNotifier<String?>(null);
 
   List<AppNotification> _notifications = <AppNotification>[];
   final Map<int, bool> _readById = <int, bool>{};
@@ -43,16 +50,22 @@ class NotificationsRepository extends ChangeNotifier {
   Set<int> get dismissedIds => _dismissedIds;
 
   bool get hasPreferences => _prefs.hasData;
+  bool get isLoadingStates => _isLoadingStates;
 
   int get unreadCount => _notifications
       .where(
         (AppNotification notification) =>
-            !notification.isRead && !_dismissedIds.contains(notification.placeId),
+            !notification.isRead &&
+            !_dismissedIds.contains(notification.placeId),
       )
       .length;
 
-  Future<void> init(SharedPreferences? storage) async {
+  Future<void> init(
+    SharedPreferences? storage, {
+    NotificationStatesRepository? remote,
+  }) async {
     _storage = storage;
+    _remote = remote ?? NotificationStatesRepository();
     if (storage != null) {
       try {
         final String? raw = storage.getString(_storageKey);
@@ -90,22 +103,131 @@ class NotificationsRepository extends ChangeNotifier {
     notifyListeners();
   }
 
-  void markAllRead() {
+  Future<void> onSignedIn(String userId) async {
+    final NotificationStatesRepository? remote = _remote;
+    if (remote == null) return;
+
+    _userId = userId;
+    _isLoadingStates = true;
+    syncError.value = null;
+    notifyListeners();
+
+    final List<NotificationState>? states = await remote.fetchAll(userId);
+    if (states == null) {
+      syncError.value = 'No se pudieron cargar tus estados de notificación.';
+    } else {
+      _applyStates(states);
+      refresh();
+    }
+
+    _isLoadingStates = false;
+    notifyListeners();
+  }
+
+  Future<void> onSignedOut() async {
+    _userId = null;
+    _readById.clear();
+    _dismissedIds.clear();
+    notificationsEnabled = true;
+    syncError.value = null;
+    try {
+      await _storage?.remove(_storageKey);
+    } catch (_) {}
+    refresh();
+  }
+
+  Future<void> setGlobalEnabled(bool enabled) async {
+    notificationsEnabled = enabled;
+    refresh();
+    await _saveRemote(
+      (NotificationStatesRepository remote, String userId) => remote.setEnabled(
+        userId,
+        NotificationStatesRepository.globalType,
+        enabled,
+      ),
+    );
+  }
+
+  Future<void> markAllRead() async {
+    final List<String> types = <String>[
+      NotificationStatesRepository.globalType,
+      for (final AppNotification notification in _notifications)
+        NotificationStatesRepository.placeType(notification.placeId),
+    ];
     for (final AppNotification notification in _notifications) {
       notification.isRead = true;
       _readById[notification.placeId] = true;
     }
     _persistState();
     notifyListeners();
+    await _saveRemote(
+      (NotificationStatesRepository remote, String userId) =>
+          remote.markManyRead(userId, types),
+    );
   }
 
-  void markDismissed(int placeId) {
+  Future<void> markRead(int placeId) async {
+    if (_readById[placeId] != true) {
+      _readById[placeId] = true;
+      for (final AppNotification notification in _notifications) {
+        if (notification.placeId == placeId) notification.isRead = true;
+      }
+      _persistState();
+      notifyListeners();
+    }
+    await _saveRemote(
+      (NotificationStatesRepository remote, String userId) => remote.markRead(
+        userId,
+        NotificationStatesRepository.placeType(placeId),
+      ),
+    );
+  }
+
+  Future<void> markDismissed(int placeId) async {
     _dismissedIds.add(placeId);
     _persistState();
     notifyListeners();
+    await _saveRemote(
+      (NotificationStatesRepository remote, String userId) => remote.setEnabled(
+        userId,
+        NotificationStatesRepository.placeType(placeId),
+        false,
+      ),
+    );
   }
 
   bool isDismissed(int placeId) => _dismissedIds.contains(placeId);
+
+  Future<void> _saveRemote(
+    Future<String?> Function(NotificationStatesRepository remote, String userId)
+    operation,
+  ) async {
+    final String? userId = _userId;
+    final NotificationStatesRepository? remote = _remote;
+    if (userId == null || remote == null) return;
+    final String? error = await operation(remote, userId);
+    if (error != null) syncError.value = error;
+  }
+
+  void _applyStates(List<NotificationState> states) {
+    notificationsEnabled = true;
+    _readById.clear();
+    _dismissedIds.clear();
+    const String prefix = 'place:';
+    for (final NotificationState state in states) {
+      if (state.notificationType == NotificationStatesRepository.globalType) {
+        notificationsEnabled = state.enabled;
+        continue;
+      }
+      if (!state.notificationType.startsWith(prefix)) continue;
+      final int? placeId = int.tryParse(
+        state.notificationType.substring(prefix.length),
+      );
+      if (placeId == null) continue;
+      if (state.lastReadAt != null) _readById[placeId] = true;
+      if (!state.enabled) _dismissedIds.add(placeId);
+    }
+  }
 
   void _persistState() {
     final SharedPreferences? storage = _storage;
@@ -119,10 +241,7 @@ class NotificationsRepository extends ChangeNotifier {
               'dismissedIds': _dismissedIds.toList(),
             }),
           )
-          .then(
-            (bool _) {},
-            onError: (Object _) {},
-          ),
+          .then((bool _) {}, onError: (Object _) {}),
     );
   }
 
@@ -246,6 +365,11 @@ class NotificationsRepository extends ChangeNotifier {
   }
 
   void _generateNotifications(Map<String, dynamic> prefs) {
+    if (!notificationsEnabled) {
+      _notifications = <AppNotification>[];
+      return;
+    }
+
     final double budget = (prefs['budget'] as num?)?.toDouble() ?? 0;
     final String? plan = prefs['plan'] as String?;
     final String? companion = prefs['companion'] as String?;
@@ -289,8 +413,15 @@ class NotificationsRepository extends ChangeNotifier {
   }
 
   void _pruneReadState() {
-    final Set<int> currentIds =
-        _notifications.map((AppNotification item) => item.placeId).toSet();
+    final Set<int> currentIds = _notifications
+        .map((AppNotification item) => item.placeId)
+        .toSet();
     _readById.removeWhere((int id, bool _) => !currentIds.contains(id));
+  }
+
+  @override
+  void dispose() {
+    syncError.dispose();
+    super.dispose();
   }
 }

@@ -47,6 +47,8 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
   String? _place;
   double _budget = 100000;
   double _minutes = 120;
+  bool _isLoading = false;
+  bool _isSaving = false;
 
   late final PreferencesRepository _prefs;
   late final NotificationsRepository _notifications;
@@ -56,11 +58,37 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
     super.initState();
     _prefs = context.read<PreferencesRepository>();
     _notifications = context.read<NotificationsRepository>();
+    _isLoading = _prefs.isSyncing;
+    _syncFields();
+    _prefs.addListener(_onPreferencesChanged);
+  }
+
+  @override
+  void dispose() {
+    _prefs.removeListener(_onPreferencesChanged);
+    super.dispose();
+  }
+
+  void _syncFields() {
     _companion = _prefs.companion;
     _plan = _prefs.plan;
     _place = _prefs.place;
     _budget = _prefs.budget > 0 ? _prefs.budget : 100000;
     _minutes = _prefs.minutes > 0 ? _prefs.minutes : 120;
+  }
+
+  void _onPreferencesChanged() {
+    if (!mounted) return;
+    if (_prefs.isSyncing) {
+      if (!_isLoading) setState(() => _isLoading = true);
+      return;
+    }
+    if (_isLoading) {
+      setState(() {
+        _isLoading = false;
+        _syncFields();
+      });
+    }
   }
 
   @override
@@ -80,7 +108,10 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
+  bool get _isBusy => _isLoading || _isSaving;
+
   Future<void> _onReady() async {
+    if (_isBusy) return;
     if (_companion == null) {
       _showSnack('Por favor selecciona con quién sales');
       return;
@@ -89,15 +120,21 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
       _showSnack('Por favor selecciona un lugar');
       return;
     }
-    await _prefs.saveAll(
-      plan: _plan,
-      budget: _budget,
-      companion: _companion,
-      place: _place,
-      minutes: _minutes,
-    );
-    _notifications.refresh();
-    _showSummary();
+    setState(() => _isSaving = true);
+    try {
+      await _prefs.saveAll(
+        plan: _plan,
+        budget: _budget,
+        companion: _companion,
+        place: _place,
+        minutes: _minutes,
+      );
+      _notifications.refresh();
+      if (!mounted) return;
+      _showSummary();
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   void _showSummary() {
@@ -166,102 +203,147 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
         child: Column(
           children: [
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 26,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.teal,
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                      child: Text(
-                        'Cuéntanos tus preferencias',
-                        textAlign: TextAlign.center,
-                        style: AppTheme.display(
-                          fontSize: 28,
-                          color: AppColors.textLight,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    _Section(
-                      label: '¿Con quién sales?',
-                      child: Wrap(
-                        alignment: WrapAlignment.center,
-                        spacing: 10,
-                        runSpacing: 10,
-                        children: [
-                          for (final option in _companions)
-                            PreferenceChip(
-                              icon: option.icon,
-                              label: option.label,
-                              selected: _companion == option.label,
-                              onTap: () =>
-                                  setState(() => _companion = option.label),
+              child: AbsorbPointer(
+                absorbing: _isBusy,
+                child: Opacity(
+                  opacity: _isBusy ? 0.6 : 1,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 26,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.teal,
+                            borderRadius: BorderRadius.circular(28),
+                          ),
+                          child: Text(
+                            'Cuéntanos tus preferencias',
+                            textAlign: TextAlign.center,
+                            style: AppTheme.display(
+                              fontSize: 28,
+                              color: AppColors.textLight,
                             ),
-                        ],
-                      ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        ValueListenableBuilder<String?>(
+                          valueListenable: _prefs.syncError,
+                          builder: (context, error, _) {
+                            if (error == null) return const SizedBox.shrink();
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AppColors.orangeDark,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                error,
+                                style: const TextStyle(
+                                  color: AppColors.textLight,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        if (_isLoading)
+                          const Padding(
+                            padding: EdgeInsets.only(bottom: 12),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.teal,
+                              ),
+                            ),
+                          ),
+                        _Section(
+                          label: '¿Con quién sales?',
+                          child: Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: 10,
+                            runSpacing: 10,
+                            children: [
+                              for (final option in _companions)
+                                PreferenceChip(
+                                  icon: option.icon,
+                                  label: option.label,
+                                  selected: _companion == option.label,
+                                  onTap: () =>
+                                      setState(() => _companion = option.label),
+                                ),
+                            ],
+                          ),
+                        ),
+                        _Section(
+                          label: 'Tipo de plan',
+                          child: CustomDropdown(
+                            value: _plan,
+                            items: [
+                              for (final category in MockData.categories)
+                                category.name,
+                            ],
+                            onChanged: (value) => setState(() => _plan = value),
+                          ),
+                        ),
+                        _Section(
+                          label: 'Presupuesto',
+                          child: IconSlider(
+                            icon: Icons.attach_money,
+                            value: _budget,
+                            min: 0,
+                            max: 500000,
+                            divisions: 50,
+                            valueLabel: formatCOP(_budget.toInt()),
+                            onChanged: (value) =>
+                                setState(() => _budget = value),
+                          ),
+                        ),
+                        _Section(
+                          label: '¿Cuánto tiempo?',
+                          child: IconSlider(
+                            icon: Icons.schedule,
+                            value: _minutes,
+                            min: 30,
+                            max: 480,
+                            divisions: 15,
+                            valueLabel: formatMinutes(_minutes.toInt()),
+                            onChanged: (value) =>
+                                setState(() => _minutes = value),
+                          ),
+                        ),
+                        _Section(
+                          label: 'Lugar',
+                          child: CustomDropdown(
+                            value: _place,
+                            items: _places,
+                            onChanged: (value) =>
+                                setState(() => _place = value),
+                          ),
+                        ),
+                      ],
                     ),
-                    _Section(
-                      label: 'Tipo de plan',
-                      child: CustomDropdown(
-                        value: _plan,
-                        items: [
-                          for (final category in MockData.categories)
-                            category.name,
-                        ],
-                        onChanged: (value) => setState(() => _plan = value),
-                      ),
-                    ),
-                    _Section(
-                      label: 'Presupuesto',
-                      child: IconSlider(
-                        icon: Icons.attach_money,
-                        value: _budget,
-                        min: 0,
-                        max: 500000,
-                        divisions: 50,
-                        valueLabel: formatCOP(_budget.toInt()),
-                        onChanged: (value) => setState(() => _budget = value),
-                      ),
-                    ),
-                    _Section(
-                      label: '¿Cuánto tiempo?',
-                      child: IconSlider(
-                        icon: Icons.schedule,
-                        value: _minutes,
-                        min: 30,
-                        max: 480,
-                        divisions: 15,
-                        valueLabel: formatMinutes(_minutes.toInt()),
-                        onChanged: (value) => setState(() => _minutes = value),
-                      ),
-                    ),
-                    _Section(
-                      label: 'Lugar',
-                      child: CustomDropdown(
-                        value: _place,
-                        items: _places,
-                        onChanged: (value) => setState(() => _place = value),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: PrimaryButton(
-                label: 'LISTO',
+                label: _isLoading
+                    ? 'Cargando...'
+                    : _isSaving
+                    ? 'Guardando...'
+                    : 'LISTO',
                 icon: Icons.check_circle_outline,
-                onPressed: _onReady,
+                onPressed: _isBusy ? null : _onReady,
               ),
             ),
           ],

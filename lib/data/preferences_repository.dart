@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/user_preferences.dart';
+import 'user_preferences_repository.dart';
+
 class PreferencesRepository extends ChangeNotifier {
   PreferencesRepository._internal();
   static PreferencesRepository _instance = PreferencesRepository._internal();
@@ -21,12 +24,17 @@ class PreferencesRepository extends ChangeNotifier {
   double _minutes = 0;
 
   SharedPreferences? _storage;
+  UserPreferencesRepository? _remote;
+  String? _userId;
+  bool _isSyncing = false;
+  final ValueNotifier<String?> syncError = ValueNotifier<String?>(null);
 
   String? get plan => _plan;
   double get budget => _budget;
   String? get companion => _companion;
   String? get place => _place;
   double get minutes => _minutes;
+  bool get isSyncing => _isSyncing;
 
   bool get hasData =>
       _plan != null ||
@@ -35,8 +43,12 @@ class PreferencesRepository extends ChangeNotifier {
       _budget > 0 ||
       _minutes > 0;
 
-  Future<void> init(SharedPreferences? storage) async {
+  Future<void> init(
+    SharedPreferences? storage, {
+    UserPreferencesRepository? remote,
+  }) async {
     _storage = storage;
+    _remote = remote ?? UserPreferencesRepository();
     if (storage == null) return;
     try {
       final String? raw = storage.getString(_storageKey);
@@ -63,6 +75,53 @@ class PreferencesRepository extends ChangeNotifier {
     _place = place;
     _minutes = minutes;
     await _persist();
+    notifyListeners();
+    await _saveRemote();
+  }
+
+  Future<void> onSignedIn(String userId) async {
+    if (_isSyncing) return;
+    final UserPreferencesRepository? remote = _remote;
+    if (remote == null) return;
+
+    _userId = userId;
+    _isSyncing = true;
+    syncError.value = null;
+    notifyListeners();
+
+    try {
+      final UserPreferencesFetchResult result = await remote.fetchOrCreate(
+        userId,
+        _toModel(),
+      );
+      if (result.error != null) {
+        syncError.value = result.error;
+        return;
+      }
+      final UserPreferences? preferences = result.preferences;
+      if (preferences != null) {
+        _apply(preferences);
+        await _persist();
+      }
+    } on Object {
+      syncError.value = 'No se pudieron cargar tus preferencias.';
+    } finally {
+      _isSyncing = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> onSignedOut() async {
+    _userId = null;
+    _plan = null;
+    _budget = 0;
+    _companion = null;
+    _place = null;
+    _minutes = 0;
+    syncError.value = null;
+    try {
+      await _storage?.remove(_storageKey);
+    } catch (_) {}
     notifyListeners();
   }
 
@@ -110,9 +169,45 @@ class PreferencesRepository extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> _saveRemote() async {
+    final String? userId = _userId;
+    final UserPreferencesRepository? remote = _remote;
+    if (userId == null || remote == null) return;
+    final String? error = await remote.upsert(_toModel());
+    if (error != null && !_isSyncing) syncError.value = error;
+  }
+
+  UserPreferences _toModel() {
+    final DateTime now = DateTime.now().toUtc();
+    return UserPreferences(
+      userId: _userId ?? '',
+      plan: _plan,
+      budget: _budget,
+      companion: _companion,
+      place: _place,
+      minutes: _minutes,
+      createdAt: now,
+      updatedAt: now,
+    );
+  }
+
+  void _apply(UserPreferences preferences) {
+    _plan = preferences.plan;
+    _budget = preferences.budget;
+    _companion = preferences.companion;
+    _place = preferences.place;
+    _minutes = preferences.minutes;
+  }
+
   Future<void> _persist() async {
     try {
       await _storage?.setString(_storageKey, jsonEncode(toMap()));
     } catch (_) {}
+  }
+
+  @override
+  void dispose() {
+    syncError.dispose();
+    super.dispose();
   }
 }
