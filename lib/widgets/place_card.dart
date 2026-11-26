@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../models/place.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_dimensions.dart';
+import '../theme/app_gradients.dart';
+import '../theme/app_shadows.dart';
+import '../theme/app_typography.dart';
 import 'place_image.dart';
 
 class PlaceCard extends StatelessWidget {
@@ -15,18 +19,12 @@ class PlaceCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 200,
+        width: AppDimensions.placeCardWidth,
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: AppColors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.textDark.withValues(alpha: 0.12),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+          boxShadow: AppShadows.card,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -35,23 +33,19 @@ class PlaceCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(10),
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: AppColors.orange,
-                  borderRadius: BorderRadius.circular(16),
+                  gradient: AppGradients.primary,
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusM),
                 ),
                 child: Text(
                   place.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: AppColors.textLight,
-                    fontWeight: FontWeight.w700,
+                  style: AppTypography.label(
                     fontSize: 14,
+                    color: AppColors.textLight,
                   ),
                 ),
               ),

@@ -51,7 +51,9 @@ void main() {
   ) async {
     await _login(tester);
 
-    expect(find.text('Category'), findsOneWidget);
+    expect(find.text('Hola, Usuario'), findsOneWidget);
+    expect(find.text('¿Qué plan hoy?'), findsOneWidget);
+    expect(find.text('Categorías'), findsOneWidget);
 
     await tester.tap(find.text('Deportes'));
     await tester.pumpAndSettle();
@@ -95,6 +97,6 @@ void main() {
     await tester.tap(find.text('Entendido'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Category'), findsOneWidget);
+    expect(find.text('Categorías'), findsOneWidget);
   });
 }

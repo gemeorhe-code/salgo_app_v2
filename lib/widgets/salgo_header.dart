@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_dimensions.dart';
+import '../theme/app_gradients.dart';
+import '../theme/app_shadows.dart';
+import '../theme/app_typography.dart';
 
 class SalgoHeader extends StatelessWidget {
   const SalgoHeader({
@@ -21,15 +24,9 @@ class SalgoHeader extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       padding: const EdgeInsets.fromLTRB(20, 18, 12, 18),
       decoration: BoxDecoration(
-        color: AppColors.teal,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.tealDark.withValues(alpha: 0.22),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        gradient: AppGradients.primary,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+        boxShadow: AppShadows.header,
       ),
       child: Row(
         children: [
@@ -40,18 +37,18 @@ class SalgoHeader extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: AppTheme.display(
+                  style: AppTypography.display(
                     fontSize: 24,
                     color: AppColors.textLight,
                   ),
                 ),
                 if (subtitle != null) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppDimensions.spaceXS),
                   Text(
                     subtitle!,
-                    style: TextStyle(
+                    style: AppTypography.body(
+                      fontSize: 13,
                       color: AppColors.textLight.withValues(alpha: 0.85),
-                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],

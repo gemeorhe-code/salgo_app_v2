@@ -9,4 +9,8 @@ abstract final class AppColors {
   static const Color textDark = Color(0xFF2E2A26);
   static const Color textLight = Color(0xFFFFFDF7);
   static const Color white = Color(0xFFFFFFFF);
+
+  static Color get border => textDark.withValues(alpha: 0.12);
+  static Color get tealSoft => teal.withValues(alpha: 0.1);
+  static Color get orangeSoft => orange.withValues(alpha: 0.14);
 }

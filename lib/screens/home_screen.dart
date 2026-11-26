@@ -5,15 +5,21 @@ import 'package:provider/provider.dart';
 
 import '../app_routes.dart';
 import '../data/mock_data.dart';
-import '../data/notifications_repository.dart';
 import '../data/places_scope.dart';
+import '../data/user_profile_repository.dart';
 import '../models/place.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_dimensions.dart';
+import '../theme/app_gradients.dart';
+import '../theme/app_shadows.dart';
+import '../theme/app_typography.dart';
 import '../utils/place_search.dart';
 import '../widgets/app_bottom_nav_bar.dart';
 import '../widgets/category_card.dart';
 import '../widgets/place_card.dart';
+import '../widgets/salgo_app_bar.dart';
+import '../widgets/search_pill.dart';
+import '../widgets/section_title.dart';
 import 'favorites_screen.dart';
 import 'map_screen.dart';
 import 'profile_screen.dart';
@@ -31,29 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'SALGO',
-          style: AppTheme.display(fontSize: 26, color: AppColors.textLight),
-        ),
-        actions: [
-          Consumer<NotificationsRepository>(
-            builder: (context, notifications, _) {
-              final int unreadCount = notifications.unreadCount;
-              return IconButton(
-                icon: Badge(
-                  isLabelVisible: unreadCount > 0,
-                  label: Text('$unreadCount'),
-                  child: const Icon(Icons.notifications_none),
-                ),
-                onPressed: () =>
-                    Navigator.pushNamed(context, AppRoutes.notifications),
-              );
-            },
-          ),
-          const SizedBox(width: 4),
-        ],
-      ),
+      appBar: const SalgoAppBar(),
       body: IndexedStack(
         index: _currentIndex,
         children: const [
@@ -122,6 +106,13 @@ class _HomeContentState extends State<_HomeContent> {
 
   @override
   Widget build(BuildContext context) {
+    final UserProfileRepository profile = context.watch<UserProfileRepository>();
+    final String rawName = profile.name.trim();
+    final String displayName = rawName.isEmpty ? 'Usuario' : rawName;
+    final String firstName = displayName.split(RegExp(r'\s+')).first;
+    final String city = profile.city.trim().isEmpty
+        ? 'Bucaramanga'
+        : profile.city.trim();
     final List<Place> places = searchPlaces(
       PlacesScope.of(context).places,
       _query,
@@ -134,21 +125,24 @@ class _HomeContentState extends State<_HomeContent> {
         (availableHeight * 0.38).clamp(120.0, 240.0).toDouble();
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.only(bottom: AppDimensions.spaceXXL),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          _Greeting(name: firstName, city: city),
           _buildSearchBar(),
-          if (!isSearching) const _SectionTitle('Category'),
+          if (!isSearching) const SectionTitle(title: 'Categorías'),
           if (!isSearching)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.spaceL,
+              ),
               child: GridView.count(
                 crossAxisCount: 4,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 8,
+                mainAxisSpacing: AppDimensions.spaceS,
+                crossAxisSpacing: AppDimensions.spaceS,
                 childAspectRatio: 0.82,
                 children: [
                   for (final category in MockData.categories)
@@ -163,7 +157,7 @@ class _HomeContentState extends State<_HomeContent> {
                 ],
               ),
             ),
-          const _SectionTitle('Recommended'),
+          const SectionTitle(title: 'Recomendados para ti'),
           _buildRecommended(places, recommendedHeight),
         ],
       ),
@@ -172,28 +166,18 @@ class _HomeContentState extends State<_HomeContent> {
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
-      child: TextField(
+      padding: const EdgeInsets.fromLTRB(
+        AppDimensions.spaceL,
+        AppDimensions.spaceM,
+        AppDimensions.spaceL,
+        AppDimensions.spaceXS,
+      ),
+      child: SearchPill(
         controller: _controller,
         focusNode: _focusNode,
-        textInputAction: TextInputAction.search,
         onChanged: _onSearchChanged,
         onEditingComplete: _onSearchEditingComplete,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w600,
-        ),
-        decoration: InputDecoration(
-          hintText: 'Buscar lugares',
-          prefixIcon: const Icon(Icons.search, color: Colors.white),
-          suffixIcon: _controller.text.isNotEmpty
-              ? IconButton(
-                  tooltip: 'Limpiar búsqueda',
-                  icon: const Icon(Icons.close, color: Colors.white),
-                  onPressed: _clearSearch,
-                )
-              : null,
-        ),
+        onClear: _clearSearch,
       ),
     );
   }
@@ -208,8 +192,7 @@ class _HomeContentState extends State<_HomeContent> {
             child: Text(
               'No encontramos lugares con ese texto',
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.textDark,
+              style: AppTypography.body(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -223,9 +206,12 @@ class _HomeContentState extends State<_HomeContent> {
       height: height,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.spaceL,
+        ),
         itemCount: places.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 14),
+        separatorBuilder: (_, _) =>
+            const SizedBox(width: AppDimensions.spaceM + 2),
         itemBuilder: (context, index) {
           final Place place = places[index];
           return PlaceCard(
@@ -242,16 +228,77 @@ class _HomeContentState extends State<_HomeContent> {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.title);
+class _Greeting extends StatelessWidget {
+  const _Greeting({required this.name, required this.city});
 
-  final String title;
+  final String name;
+  final String city;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 14),
-      child: Text(title, style: AppTheme.display(fontSize: 24)),
+    return Container(
+      margin: const EdgeInsets.fromLTRB(
+        AppDimensions.spaceL,
+        AppDimensions.spaceL,
+        AppDimensions.spaceL,
+        AppDimensions.spaceXS,
+      ),
+      padding: const EdgeInsets.all(AppDimensions.spaceXL),
+      decoration: BoxDecoration(
+        gradient: AppGradients.primary,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+        boxShadow: AppShadows.header,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Hola, $name',
+                  style: AppTypography.display(
+                    fontSize: 22,
+                    color: AppColors.textLight,
+                  ),
+                ),
+                const SizedBox(height: AppDimensions.spaceXS),
+                Text(
+                  '¿Qué plan hoy?',
+                  style: AppTypography.title(
+                    fontSize: 18,
+                    color: AppColors.textLight,
+                  ),
+                ),
+                const SizedBox(height: AppDimensions.spaceS),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.location_on_outlined,
+                      size: 16,
+                      color: AppColors.textLight,
+                    ),
+                    const SizedBox(width: AppDimensions.spaceXS),
+                    Text(
+                      'En $city',
+                      style: AppTypography.caption(
+                        fontSize: 12,
+                        color: AppColors.textLight.withValues(alpha: 0.9),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const Icon(
+            Icons.explore_outlined,
+            size: 44,
+            color: AppColors.textLight,
+          ),
+        ],
+      ),
     );
   }
 }
