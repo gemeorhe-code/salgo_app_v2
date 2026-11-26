@@ -191,6 +191,7 @@ class PlacesCatalogService {
       lat: lat,
       lng: lng,
       imageUrl: _httpsUrlOf(row['image_url']),
+      isActive: row['is_active'] is bool ? row['is_active'] as bool : true,
     );
   }
 
@@ -244,6 +245,6 @@ class PlacesCatalogService {
         'lat': place.lat,
         'lng': place.lng,
         'image_url': place.imageUrl,
-        'is_active': true,
+        'is_active': place.isActive,
       };
 }

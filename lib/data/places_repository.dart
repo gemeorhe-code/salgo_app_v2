@@ -55,6 +55,13 @@ class PlacesRepository extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
+  Future<bool> refreshCatalog() async {
+    final List<Place>? remote = await _catalog.fetchRemote();
+    if (remote == null || _disposed) return false;
+    _replaceCatalog(remote);
+    return true;
+  }
+
   List<Place> get places => List<Place>.unmodifiable(_places);
 
   List<Place> get favorites =>
@@ -111,9 +118,7 @@ class PlacesRepository extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> _refreshRemoteCatalog() async {
-    final List<Place>? remote = await _catalog.fetchRemote();
-    if (remote == null || _disposed) return;
-    _replaceCatalog(remote);
+    await refreshCatalog();
   }
 
   @override

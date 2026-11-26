@@ -14,6 +14,7 @@ class Place {
     required this.lng,
     this.imageUrl,
     this.isFavorite = false,
+    this.isActive = true,
   });
 
   final int id;
@@ -34,8 +35,9 @@ class Place {
   /// con gradiente e ícono representativo.
   final String? imageUrl;
   final bool isFavorite;
+  final bool isActive;
 
-  Place copyWith({String? imageUrl, bool? isFavorite}) {
+  Place copyWith({String? imageUrl, bool? isFavorite, bool? isActive}) {
     return Place(
       id: id,
       name: name,
@@ -51,6 +53,7 @@ class Place {
       lng: lng,
       imageUrl: imageUrl ?? this.imageUrl,
       isFavorite: isFavorite ?? this.isFavorite,
+      isActive: isActive ?? this.isActive,
     );
   }
 }

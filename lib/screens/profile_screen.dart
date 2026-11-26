@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../app_routes.dart';
 import '../data/auth_session_flow.dart';
+import '../data/place_admin_repository.dart';
 import '../data/user_profile_repository.dart';
 import '../data/notifications_repository.dart';
 import '../data/places_repository.dart';
@@ -14,6 +15,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../widgets/salgo_header.dart';
 import '../widgets/secondary_button.dart';
+import 'admin_places_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -26,6 +28,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
   static const Duration _signOutTimeout = Duration(seconds: 10);
 
   bool _isSigningOut = false;
+  bool _canManagePlaces = false;
+  late final PlaceAdminRepository _placeAdminRepository;
+
+  @override
+  void initState() {
+    super.initState();
+    _placeAdminRepository = PlaceAdminRepository();
+    unawaited(_loadPlaceAccess());
+  }
+
+  Future<void> _loadPlaceAccess() async {
+    final bool canManage =
+        (await _placeAdminRepository.fetchAccess()).canManage;
+    if (!mounted || !canManage) return;
+    setState(() => _canManagePlaces = true);
+  }
 
   void _editProfile(BuildContext context) {
     Navigator.pushNamed(context, AppRoutes.editProfile);
@@ -216,6 +234,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onTap: () =>
                       Navigator.pushNamed(context, AppRoutes.preferences),
                 ),
+                if (_canManagePlaces) ...[
+                  const SizedBox(height: 10),
+                  _OptionTile(
+                    icon: Icons.admin_panel_settings_outlined,
+                    label: 'Administrar lugares',
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const AdminPlacesScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
                 const SizedBox(height: 10),
                 _OptionTile(
                   icon: Icons.notifications_none,

@@ -35,12 +35,52 @@ Aplicación Flutter de recomendaciones de planes y lugares en Bucaramanga. El ca
 ## Supabase
 
 1. Crea un proyecto en Supabase.
-2. Abre el SQL Editor y ejecuta `supabase/schema.sql`. El script crea cinco tablas (`salgo_places`, `salgo_profiles`, `salgo_favorites`, `salgo_user_preferences` y `salgo_notification_states`) con Row Level Security.
+2. Abre el SQL Editor y ejecuta `supabase/schema.sql`. El script crea seis tablas (`salgo_places`, `salgo_profiles`, `salgo_favorites`, `salgo_user_preferences`, `salgo_notification_states` y `salgo_user_roles`) con Row Level Security.
 3. En Authentication > Providers habilita `Email` y `Google`.
 4. Configura las URLs de redirección permitidas, incluida `salgo://auth`.
 5. Actualiza `lib/data/supabase_config.dart` con la URL y la publishable key de tu proyecto.
 
-La app usa el usuario autenticado (`auth.uid()`) para aislar perfil, favoritos, preferencias y estados de notificación. El catálogo `salgo_places` se lee públicamente solo cuando `is_active = true`. Si Supabase no está disponible, la app continúa con el catálogo local.
+La app usa el usuario autenticado (`auth.uid()`) para aislar perfil, favoritos, preferencias y estados de notificación. El catálogo `salgo_places` se lee en la app solo cuando `is_active = true`. Si Supabase no está disponible, la app continúa con el catálogo local.
+
+### Roles y administración de lugares
+
+Los roles viven en `salgo_user_roles` y no dependen de `perfiles.rol`.
+
+- `admin`: puede crear, editar, activar o desactivar cualquier lugar y asignar dueños por correo exacto.
+- `owner`: puede editar solo los lugares asignados; no crea lugares ni cambia `is_active`.
+- Otros usuarios: solo leen lugares activos.
+
+Los lugares `1..6` ya usados por favoritos y notificaciones se conservan y empiezan sin dueño. Los lugares nuevos nacen desde el id `1000`.
+
+El primer administrador se asigna manualmente desde el SQL Editor, nunca desde la app. La cuenta debe haber iniciado sesión al menos una vez:
+
+```sql
+insert into public.salgo_user_roles (user_id, role)
+select id, 'admin'
+from auth.users
+where lower(email) = lower('TU_CORREO@EJEMPLO.COM')
+on conflict do nothing;
+```
+
+Para asignar un dueño, usa la pantalla “Administrar lugares” o ejecuta:
+
+```sql
+select public.salgo_assign_owner('correo@ejemplo.com', 1000);
+```
+
+También existe `public.salgo_remove_owner('correo@ejemplo.com', 1000)` para quitar la asignación.
+
+Estas reglas protegen lo que hace la app con la anon key. No protegen lo que haga una persona directamente en el panel de Supabase con el rol `postgres` o con la service role key: desde ahí se pueden modificar los datos sin pasar por las políticas ni los triggers de la app.
+
+### Prueba con dos cuentas
+
+1. Crea la cuenta A (administrador) y la cuenta B (dueño) con Email en Supabase Auth e inicia sesión con ambas al menos una vez.
+2. Asigna manualmente a A como `admin` con el SQL anterior.
+3. Con A, entra a Perfil > “Administrar lugares”; crea un lugar nuevo, edítalo, cambia `is_active` y asigna a B como dueño por correo exacto.
+4. Con B, entra a Perfil > “Administrar lugares”; confirma que solo ve y puede editar el lugar asignado y que no ve controles para crear ni para activar/desactivar.
+5. Con una tercera cuenta sin rol, confirma que “Administrar lugares” no aparece.
+6. Sin red, intenta guardar: la app debe mostrar “Sin conexión: no se puede guardar el lugar. Inténtalo cuando haya red.” y no debe encolar escrituras.
+7. Si `salgo_my_place_access` falta o falla, la opción se oculta sin mensajes de error ni cierre de sesión.
 
 ### Claves públicas y secretas
 
