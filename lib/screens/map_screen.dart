@@ -349,8 +349,10 @@ class _MapScreenState extends State<MapScreen> {
                     )
                   else
                     Positioned(
-                      right: 12,
-                      bottom: selectedPlace == null ? 12 : 168,
+                      right: AppDimensions.spaceM,
+                      bottom: selectedPlace == null
+                          ? AppDimensions.spaceM
+                          : 168,
                       child: Column(
                         children: [
                           _MapActionButton(
@@ -375,9 +377,9 @@ class _MapScreenState extends State<MapScreen> {
                     ),
                   if (selectedPlace != null)
                     Positioned(
-                      left: 12,
-                      right: 12,
-                      bottom: 12,
+                      left: AppDimensions.spaceM,
+                      right: AppDimensions.spaceM,
+                      bottom: AppDimensions.spaceM,
                       child: MapPlaceCard(
                         place: selectedPlace,
                         onFavorite: () =>
@@ -520,7 +522,9 @@ class _EmptyCityNotice extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 32),
+        margin: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.spaceXXL + 8,
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         decoration: BoxDecoration(
           color: AppColors.white,

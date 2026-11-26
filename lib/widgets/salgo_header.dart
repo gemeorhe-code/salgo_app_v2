@@ -12,11 +12,13 @@ class SalgoHeader extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.trailing,
+    this.background,
   });
 
   final String title;
   final String? subtitle;
   final Widget? trailing;
+  final Color? background;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +26,8 @@ class SalgoHeader extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       padding: const EdgeInsets.fromLTRB(20, 18, 12, 18),
       decoration: BoxDecoration(
-        gradient: AppGradients.primary,
+        gradient: background == null ? AppGradients.primary : null,
+        color: background,
         borderRadius: BorderRadius.circular(AppDimensions.radiusL),
         boxShadow: AppShadows.header,
       ),
