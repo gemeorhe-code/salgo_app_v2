@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_dimensions.dart';
+import '../theme/app_shadows.dart';
+import '../theme/app_typography.dart';
 
 class PreferenceChip extends StatelessWidget {
   const PreferenceChip({
@@ -20,35 +23,31 @@ class PreferenceChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.spaceL,
+          vertical: AppDimensions.spaceS,
+        ),
         decoration: BoxDecoration(
           color: selected ? AppColors.teal : AppColors.orange,
-          borderRadius: BorderRadius.circular(22),
-          border: selected ? Border.all(color: Colors.white, width: 2) : null,
-          boxShadow: selected
-              ? [
-                  BoxShadow(
-                    color: AppColors.teal.withValues(alpha: 0.35),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ]
+          borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+          border: selected
+              ? Border.all(color: AppColors.textLight, width: 2)
               : null,
+          boxShadow: selected ? AppShadows.floating : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: Colors.white, size: 20),
-            const SizedBox(width: 7),
+            Icon(icon, color: AppColors.textLight, size: 20),
+            const SizedBox(width: AppDimensions.spaceS),
             Text(
               label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
+              style: AppTypography.label(
                 fontSize: 15,
+                color: AppColors.textLight,
               ),
             ),
           ],

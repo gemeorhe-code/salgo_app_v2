@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
+import '../theme/app_shadows.dart';
+import '../theme/app_typography.dart';
+
 class AppBottomNavBar extends StatelessWidget {
   const AppBottomNavBar({
     super.key,
@@ -13,20 +17,28 @@ class AppBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF1B5A62),
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: AppColors.teal,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
+        boxShadow: AppShadows.navigation,
       ),
       child: SafeArea(
         top: false,
         child: BottomNavigationBar(
           backgroundColor: Colors.transparent,
-          selectedItemColor: Colors.white,
-          unselectedItemColor: Colors.white70,
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
+          selectedItemColor: AppColors.textLight,
+          unselectedItemColor: AppColors.textLight.withValues(alpha: 0.72),
+          selectedLabelStyle: AppTypography.label(
+            fontSize: 11,
+            color: AppColors.textLight,
+          ),
+          unselectedLabelStyle: AppTypography.caption(
+            fontSize: 11,
+            color: AppColors.textLight.withValues(alpha: 0.72),
+          ),
           currentIndex: selectedIndex,
           onTap: onChanged,
           items: const [

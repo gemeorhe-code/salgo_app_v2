@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import '../data/user_profile_repository.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_dimensions.dart';
+import '../theme/app_gradients.dart';
+import '../theme/app_shadows.dart';
+import '../theme/app_typography.dart';
 import '../widgets/primary_button.dart';
+import '../widgets/salgo_app_bar.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -82,17 +87,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: SalgoAppBar(
         leading: IconButton(
           tooltip: 'Volver',
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Editar perfil',
-          textAlign: TextAlign.center,
-        ),
-        actions: [
+        extraActions: [
           IconButton(
             icon: const Icon(Icons.check),
             tooltip: 'Guardar',
@@ -101,11 +102,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
+        padding: const EdgeInsets.fromLTRB(
+          AppDimensions.spaceL,
+          AppDimensions.spaceL,
+          AppDimensions.spaceL,
+          AppDimensions.spaceXXL + 16,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Avatar with camera badge
             Stack(
               clipBehavior: Clip.none,
               children: [
@@ -115,19 +120,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [AppColors.orange, AppColors.teal],
-                    ),
+                    gradient: AppGradients.primary,
                     border: Border.all(color: AppColors.teal, width: 3),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.textDark.withValues(alpha: 0.15),
-                        blurRadius: 12,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
+                    boxShadow: AppShadows.floating,
                   ),
                   child: const Icon(
                     Icons.person,
@@ -137,9 +132,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppDimensions.spaceXXL),
 
-            // Name field
             _buildTextField(
               controller: _nameController,
               label: 'Nombre',
@@ -148,9 +142,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               icon: Icons.person_outlined,
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: AppDimensions.spaceL),
 
-            // Email field
             _buildTextField(
               controller: _emailController,
               label: 'Correo',
@@ -160,14 +153,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               icon: Icons.email_outlined,
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: AppDimensions.spaceL),
 
-            // City chips
             _buildCityChips(),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: AppDimensions.spaceXXL),
 
-            // Save button
             PrimaryButton(
               label: 'Guardar',
               onPressed: _saveProfile,
@@ -191,35 +182,33 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            color: AppColors.textDark,
-            fontWeight: FontWeight.w700,
+          style: AppTypography.label(
             fontSize: 15,
+            color: AppColors.textDark,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppDimensions.spaceS),
         TextField(
           controller: controller,
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(
-              color: AppColors.textLight.withValues(alpha: 0.85),
-              fontWeight: FontWeight.w500,
+            hintStyle: AppTypography.body(
               fontSize: 15,
+              color: AppColors.textLight.withValues(alpha: 0.85),
             ),
             prefixIcon: Icon(icon, color: AppColors.teal),
             filled: true,
             fillColor: AppColors.orange.withValues(alpha: 0.05),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusM),
               borderSide: BorderSide.none,
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusM),
               borderSide: BorderSide.none,
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusM),
               borderSide: const BorderSide(color: AppColors.teal, width: 2),
             ),
             errorText: error,
@@ -235,32 +224,30 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       children: [
         Text(
           'Ciudad',
-          style: const TextStyle(
-            color: AppColors.textDark,
-            fontWeight: FontWeight.w700,
+          style: AppTypography.label(
             fontSize: 15,
+            color: AppColors.textDark,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppDimensions.spaceS),
         Wrap(
-          spacing: 8,
-          runSpacing: 8,
+          spacing: AppDimensions.spaceS,
+          runSpacing: AppDimensions.spaceS,
           children: _cities.map((city) {
             final isSelected = _selectedCity == city;
             return FilterChip(
               label: Text(
                 city,
-                style: TextStyle(
-                  color: isSelected ? AppColors.textLight : AppColors.textDark,
-                  fontWeight: FontWeight.w600,
+                style: AppTypography.label(
                   fontSize: 13,
+                  color: isSelected ? AppColors.textLight : AppColors.textDark,
                 ),
               ),
               selected: isSelected,
               selectedColor: AppColors.teal,
               backgroundColor: AppColors.cream,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(AppDimensions.radiusM),
                 side: BorderSide(color: AppColors.teal, width: 1),
               ),
               onSelected: (selected) {

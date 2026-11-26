@@ -10,9 +10,14 @@ import '../data/places_repository.dart';
 import '../data/places_scope.dart';
 import '../models/place.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_dimensions.dart';
+import '../theme/app_shadows.dart';
+import '../theme/app_typography.dart';
 import '../utils/place_search.dart';
-import '../widgets/place_image.dart';
-import '../widgets/salgo_header.dart';
+import '../widgets/city_chip.dart';
+import '../widgets/map_place_card.dart';
+import '../widgets/search_pill.dart';
+import '../widgets/section_title.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key, this.locationService});
@@ -276,23 +281,26 @@ class _MapScreenState extends State<MapScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SalgoHeader(
+        const SectionTitle(
           title: 'Mapa',
           subtitle: 'Explora lugares por ciudad',
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppDimensions.spaceS),
         _buildSearchBar(),
-        const SizedBox(height: 10),
+        const SizedBox(height: AppDimensions.spaceS),
         SizedBox(
-          height: 42,
+          height: AppDimensions.cityChipHeight,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDimensions.spaceL,
+            ),
             itemCount: MockData.cities.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 8),
+            separatorBuilder: (_, _) =>
+                const SizedBox(width: AppDimensions.spaceS),
             itemBuilder: (context, index) {
               final String city = MockData.cities[index];
-              return _CityChip(
+              return CityChip(
                 label: city,
                 selected: city == _selectedCity,
                 onTap: () => _selectCity(city),
@@ -300,18 +308,23 @@ class _MapScreenState extends State<MapScreen> {
             },
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: AppDimensions.spaceM),
         if (showSearchResults)
           Flexible(
             fit: FlexFit.loose,
             child: _buildSearchResultsPanel(searchResults, maxResultsHeight),
           ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppDimensions.spaceM),
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            padding: const EdgeInsets.fromLTRB(
+              AppDimensions.spaceL,
+              0,
+              AppDimensions.spaceL,
+              AppDimensions.spaceL,
+            ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusL),
               child: Stack(
                 children: [
                   Positioned.fill(
@@ -336,8 +349,10 @@ class _MapScreenState extends State<MapScreen> {
                     )
                   else
                     Positioned(
-                      right: 12,
-                      bottom: selectedPlace == null ? 12 : 168,
+                      right: AppDimensions.spaceM,
+                      bottom: selectedPlace == null
+                          ? AppDimensions.spaceM
+                          : 168,
                       child: Column(
                         children: [
                           _MapActionButton(
@@ -345,13 +360,13 @@ class _MapScreenState extends State<MapScreen> {
                             tooltip: 'Mi ubicación',
                             onTap: _goToMyLocation,
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: AppDimensions.spaceS),
                           _MapActionButton(
                             icon: Icons.add,
                             tooltip: 'Acercar',
                             onTap: _zoomIn,
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: AppDimensions.spaceS),
                           _MapActionButton(
                             icon: Icons.remove,
                             tooltip: 'Alejar',
@@ -362,10 +377,10 @@ class _MapScreenState extends State<MapScreen> {
                     ),
                   if (selectedPlace != null)
                     Positioned(
-                      left: 12,
-                      right: 12,
-                      bottom: 12,
-                      child: _PlaceCard(
+                      left: AppDimensions.spaceM,
+                      right: AppDimensions.spaceM,
+                      bottom: AppDimensions.spaceM,
+                      child: MapPlaceCard(
                         place: selectedPlace,
                         onFavorite: () =>
                             repository.toggleFavorite(selectedPlace.id),
@@ -387,32 +402,15 @@ class _MapScreenState extends State<MapScreen> {
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: TextField(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.spaceL,
+      ),
+      child: SearchPill(
         controller: _searchController,
         focusNode: _searchFocusNode,
-        textInputAction: TextInputAction.search,
         onChanged: _onSearchChanged,
         onEditingComplete: _onSearchEditingComplete,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w600,
-        ),
-        decoration: InputDecoration(
-          hintText: 'Buscar lugares',
-          prefixIcon: const Icon(Icons.search, color: Colors.white),
-          suffixIcon: _searchController.text.isNotEmpty
-              ? IconButton(
-                  tooltip: 'Limpiar búsqueda',
-                  icon: const Icon(Icons.close, color: Colors.white),
-                  onPressed: _clearSearch,
-                )
-              : null,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 14,
-          ),
-        ),
+        onClear: _clearSearch,
       ),
     );
   }
@@ -420,29 +418,26 @@ class _MapScreenState extends State<MapScreen> {
   Widget _buildSearchResultsPanel(List<Place> results, double maxHeight) {
     final double height = results.isEmpty ? 88.0 : maxHeight;
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.spaceL,
+      ),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.textDark.withValues(alpha: 0.12),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+        boxShadow: AppShadows.card,
       ),
       child: ConstrainedBox(
         constraints: BoxConstraints(maxHeight: height),
         child: results.isEmpty
             ? Center(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppDimensions.spaceL,
+                  ),
                   child: Text(
                     'No encontramos lugares con ese texto',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: AppColors.textDark,
+                    style: AppTypography.body(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
@@ -472,57 +467,15 @@ class _MapScreenState extends State<MapScreen> {
         place.name,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+        style: AppTypography.title(fontSize: 14),
       ),
       subtitle: Text(
         '${place.category} · ${place.city}',
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
+        style: AppTypography.caption(fontSize: 12),
       ),
       onTap: () => _selectSearchResult(place),
-    );
-  }
-}
-
-class _CityChip extends StatelessWidget {
-  const _CityChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: selected ? AppColors.teal : AppColors.white,
-      borderRadius: BorderRadius.circular(21),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(21),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(21),
-            border: Border.all(
-              color: selected
-                  ? AppColors.teal
-                  : AppColors.teal.withValues(alpha: 0.35),
-            ),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: selected ? AppColors.textLight : AppColors.teal,
-              fontWeight: FontWeight.w700,
-              fontSize: 13,
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
@@ -550,116 +503,10 @@ class _MapActionButton extends StatelessWidget {
           onTap: onTap,
           customBorder: const CircleBorder(),
           child: SizedBox(
-            width: 42,
-            height: 42,
+            width: AppDimensions.mapButtonSize,
+            height: AppDimensions.mapButtonSize,
             child: Icon(icon, color: AppColors.teal, size: 22),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _PlaceCard extends StatelessWidget {
-  const _PlaceCard({
-    required this.place,
-    required this.onFavorite,
-    required this.onDetails,
-  });
-
-  final Place place;
-  final VoidCallback onFavorite;
-  final VoidCallback onDetails;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.white,
-      borderRadius: BorderRadius.circular(20),
-      elevation: 8,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(14),
-              child: SizedBox(
-                width: 64,
-                height: 64,
-                child: PlaceImage(place: place, iconSize: 28),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    place.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.textDark,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    place.category,
-                    style: const TextStyle(
-                      color: AppColors.teal,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    place.price,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: AppColors.textDark.withValues(alpha: 0.7),
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  tooltip: place.isFavorite
-                      ? 'Quitar de favoritos'
-                      : 'Agregar a favoritos',
-                  icon: Icon(
-                    place.isFavorite ? Icons.favorite : Icons.favorite_border,
-                    color: AppColors.orange,
-                  ),
-                  onPressed: onFavorite,
-                ),
-                FilledButton(
-                  onPressed: onDetails,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.teal,
-                    foregroundColor: AppColors.textLight,
-                    minimumSize: const Size(0, 36),
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Ver detalle',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ],
-            ),
-          ],
         ),
       ),
     );
@@ -675,32 +522,24 @@ class _EmptyCityNotice extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 32),
+        margin: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.spaceXXL + 8,
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         decoration: BoxDecoration(
           color: AppColors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.textDark.withValues(alpha: 0.12),
-              blurRadius: 12,
-              offset: const Offset(0, 5),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+          boxShadow: AppShadows.card,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.location_off, size: 40, color: AppColors.orange),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppDimensions.spaceS),
             Text(
               'No hay lugares en $city',
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.textDark,
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-              ),
+              style: AppTypography.title(fontSize: 15),
             ),
           ],
         ),

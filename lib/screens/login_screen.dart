@@ -9,7 +9,8 @@ import '../data/supabase_auth_service.dart';
 import '../data/supabase_gate.dart';
 import '../data/user_profile_repository.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_dimensions.dart';
+import '../theme/app_typography.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/google_icon.dart';
 import '../widgets/primary_button.dart';
@@ -165,29 +166,32 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDimensions.spaceXXL + 4,
+              vertical: AppDimensions.spaceXXL,
+            ),
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SalgoLogo(),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: AppDimensions.spaceXXL + 8),
                   Text(
                     'Bienvenido',
                     textAlign: TextAlign.center,
-                    style: AppTheme.display(fontSize: 30),
+                    style: AppTypography.display(fontSize: 30),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppDimensions.spaceS),
                   Text(
                     'Ingresa para descubrir planes en Bucaramanga',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: AppColors.textDark.withValues(alpha: 0.7),
+                    style: AppTypography.body(
                       fontSize: 15,
+                      color: AppColors.textDark.withValues(alpha: 0.7),
                     ),
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: AppDimensions.spaceXXL + 4),
                   CustomTextField(
                     label: 'Correo electrónico',
                     controller: _emailController,
@@ -196,7 +200,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     prefixIcon: Icons.mail_outline,
                     validator: _validateEmail,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppDimensions.spaceL),
                   CustomTextField(
                     label: 'Contraseña',
                     controller: _passwordController,
@@ -205,7 +209,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     obscureText: true,
                     validator: _validatePassword,
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: AppDimensions.spaceXL),
                   PrimaryButton(
                     label: 'Ingresar',
                     icon: Icons.login,
@@ -218,16 +222,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         context,
                         AppRoutes.forgotPassword,
                       ),
-                      child: const Text(
+                      child: Text(
                         '¿Olvidaste tu contraseña?',
-                        style: TextStyle(
-                          color: AppColors.orange,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: AppTypography.label(color: AppColors.orange),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppDimensions.spaceXS),
                   SecondaryButton(
                     label: _isLoading
                         ? 'Conectando con Google...'
@@ -241,26 +242,23 @@ class _LoginScreenState extends State<LoginScreen> {
                         : const GoogleIcon(),
                     onPressed: _isLoading ? null : _signInWithGoogle,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppDimensions.spaceXXL),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
+                      Text(
                         '¿No tienes cuenta?',
-                        style: TextStyle(
-                          color: AppColors.textDark,
+                        style: AppTypography.body(
                           fontSize: 15,
+                          color: AppColors.textDark,
                         ),
                       ),
                       TextButton(
                         onPressed: () =>
                             Navigator.pushNamed(context, AppRoutes.register),
-                        child: const Text(
+                        child: Text(
                           'Registrarse aquí',
-                          style: TextStyle(
-                            color: AppColors.orange,
-                            fontWeight: FontWeight.w800,
-                          ),
+                          style: AppTypography.label(color: AppColors.orange),
                         ),
                       ),
                     ],

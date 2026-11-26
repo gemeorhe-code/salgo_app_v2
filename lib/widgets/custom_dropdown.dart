@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_typography.dart';
 
 class CustomDropdown extends StatelessWidget {
   const CustomDropdown({
@@ -23,18 +24,13 @@ class CustomDropdown extends StatelessWidget {
       isExpanded: true,
       onChanged: onChanged,
       dropdownColor: AppColors.orange,
-      style: const TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.w700,
-        fontSize: 15,
-      ),
-      icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white),
+      style: AppTypography.label(fontSize: 15, color: AppColors.textLight),
+      icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.textLight),
       hint: Text(
         hint,
-        style: TextStyle(
-          color: Colors.white.withValues(alpha: 0.85),
-          fontWeight: FontWeight.w600,
+        style: AppTypography.body(
           fontSize: 15,
+          color: AppColors.textLight.withValues(alpha: 0.85),
         ),
       ),
       items: [

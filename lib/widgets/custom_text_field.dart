@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
+import '../theme/app_typography.dart';
+
 class CustomTextField extends StatefulWidget {
   const CustomTextField({
     super.key,
@@ -36,17 +39,17 @@ class _CustomTextFieldState extends State<CustomTextField> {
       textInputAction: widget.textInputAction,
       obscureText: _obscured,
       autocorrect: false,
-      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+      style: AppTypography.body(fontSize: 15, color: AppColors.textLight),
       decoration: InputDecoration(
         hintText: widget.label,
         prefixIcon: widget.prefixIcon == null
             ? null
-            : Icon(widget.prefixIcon, color: Colors.white),
+            : Icon(widget.prefixIcon, color: AppColors.textLight),
         suffixIcon: widget.obscureText
             ? IconButton(
                 icon: Icon(
                   _obscured ? Icons.visibility : Icons.visibility_off,
-                  color: Colors.white,
+                  color: AppColors.textLight,
                 ),
                 onPressed: () => setState(() => _obscured = !_obscured),
               )

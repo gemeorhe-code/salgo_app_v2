@@ -7,7 +7,10 @@ import '../app_routes.dart';
 import '../data/notifications_repository.dart';
 import '../data/places_scope.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_dimensions.dart';
+import '../theme/app_typography.dart';
 import '../widgets/primary_button.dart';
+import '../widgets/salgo_app_bar.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -31,14 +34,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: SalgoAppBar(
         leading: IconButton(
           tooltip: 'Volver',
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Notificaciones', textAlign: TextAlign.center),
-        actions: [
+        extraActions: [
           IconButton(
             icon: const Icon(Icons.done_all),
             tooltip: 'Marcar todas como leídas',
@@ -56,18 +58,24 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 if (error == null) return const SizedBox.shrink();
                 return Container(
                   width: double.infinity,
-                  margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.fromLTRB(
+                    AppDimensions.spaceL,
+                    AppDimensions.spaceM,
+                    AppDimensions.spaceL,
+                    0,
+                  ),
+                  padding: const EdgeInsets.all(AppDimensions.spaceM),
                   decoration: BoxDecoration(
                     color: AppColors.orangeDark,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(
+                      AppDimensions.radiusS,
+                    ),
                   ),
                   child: Text(
                     error,
-                    style: const TextStyle(
+                    style: AppTypography.body(
                       color: AppColors.textLight,
                       fontSize: 13,
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 );
@@ -84,14 +92,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               onChanged: _notifRepo.isLoadingStates || _isMarking
                   ? null
                   : _setGlobalEnabled,
-              title: const Text(
+              title: Text(
                 'Activar sugerencias',
-                style: TextStyle(
-                  color: AppColors.textDark,
-                  fontWeight: FontWeight.w700,
+                style: AppTypography.label(color: AppColors.textDark),
+              ),
+              subtitle: Text(
+                'Recibe planes según tus preferencias',
+                style: AppTypography.body(
+                  fontSize: 12,
+                  color: AppColors.textDark.withValues(alpha: 0.7),
                 ),
               ),
-              subtitle: const Text('Recibe planes según tus preferencias'),
               activeThumbColor: AppColors.teal,
             ),
             const Divider(height: 1),
@@ -116,7 +127,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
+      padding: const EdgeInsets.fromLTRB(
+        AppDimensions.spaceL,
+        AppDimensions.spaceL,
+        AppDimensions.spaceL,
+        AppDimensions.spaceXXL + 16,
+      ),
       itemCount: visible.length,
       itemBuilder: (context, index) {
         final notif = visible[index];
@@ -136,29 +152,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(Icons.notifications_none, size: 80, color: AppColors.teal),
-          const SizedBox(height: 16),
-          const Text(
+          const SizedBox(height: AppDimensions.spaceL),
+          Text(
             'Aún no tienes sugerencias.',
-            style: TextStyle(
-              color: AppColors.textDark,
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            ),
+            style: AppTypography.title(fontSize: 18),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppDimensions.spaceS),
           Text(
             !_notifRepo.notificationsEnabled
                 ? 'Activa las sugerencias para volver a recibirlas.'
                 : _notifRepo.hasPreferences
                 ? 'No hay lugares que coincidan con tus preferencias.'
                 : 'Llena el formulario de preferencias para recibirlas.',
-            style: TextStyle(
+            style: AppTypography.label(
               color: AppColors.textDark.withValues(alpha: 0.7),
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppDimensions.spaceXXL),
           PrimaryButton(
             label: 'Ir al formulario',
             onPressed: () {
@@ -257,25 +267,25 @@ class _NotificationCardState extends State<_NotificationCard> {
     return Card(
       key: ValueKey('notif_${notif.placeId}'),
       color: AppColors.white,
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: AppDimensions.spaceL),
       elevation: 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusM),
         side: BorderSide(color: AppColors.teal.withValues(alpha: 0.3)),
       ),
       child: InkWell(
         onTap: widget.onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusM),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppDimensions.spaceL),
           child: Stack(
             children: [
               Row(
                 children: [
                   // Ícono/círculo izquierda
                   Container(
-                    width: 40,
-                    height: 40,
+                    width: AppDimensions.cityChipHeight - 2,
+                    height: AppDimensions.cityChipHeight - 2,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: AppColors.orange,
@@ -289,7 +299,7 @@ class _NotificationCardState extends State<_NotificationCard> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: AppDimensions.spaceL),
                   // Información derecha
                   Expanded(
                     child: Column(
@@ -297,44 +307,44 @@ class _NotificationCardState extends State<_NotificationCard> {
                       children: [
                         Text(
                           notif.title,
-                          style: TextStyle(
-                            color: AppColors.textDark,
-                            fontWeight: FontWeight.w700,
+                          style: AppTypography.label(
                             fontSize: 15,
+                            color: AppColors.textDark,
+                          ).copyWith(
                             decoration: isRead
                                 ? TextDecoration.lineThrough
                                 : null,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: AppDimensions.spaceXS),
                         Text(
                           notif.message,
-                          style: const TextStyle(
-                            color: AppColors.textDark,
+                          style: AppTypography.body(
                             fontSize: 12,
                             height: 1.3,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppDimensions.spaceS),
                         Wrap(
-                          spacing: 6,
+                          spacing: AppDimensions.spaceS - 2,
                           children: [
                             for (final tag in notif.tags)
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
+                                  horizontal: AppDimensions.spaceS - 2,
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
                                   color: AppColors.orange,
-                                  borderRadius: BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(
+                                    AppDimensions.radiusS - 2,
+                                  ),
                                 ),
                                 child: Text(
                                   tag,
-                                  style: const TextStyle(
-                                    color: AppColors.textLight,
+                                  style: AppTypography.caption(
                                     fontSize: 10,
-                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textLight,
                                   ),
                                 ),
                               ),
@@ -348,8 +358,8 @@ class _NotificationCardState extends State<_NotificationCard> {
               // Punto de no leído
               if (!isRead)
                 Positioned(
-                  right: 8,
-                  top: 8,
+                  right: AppDimensions.spaceS,
+                  top: AppDimensions.spaceS,
                   child: Container(
                     width: 12,
                     height: 12,

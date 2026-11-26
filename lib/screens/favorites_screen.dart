@@ -4,7 +4,9 @@ import '../app_routes.dart';
 import '../data/places_scope.dart';
 import '../models/place.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_dimensions.dart';
+import '../theme/app_shadows.dart';
+import '../theme/app_typography.dart';
 import '../widgets/favorite_place_card.dart';
 import '../widgets/salgo_header.dart';
 
@@ -18,14 +20,24 @@ class FavoritesScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SalgoHeader(title: 'Favoritos', subtitle: 'Tus planes guardados'),
+        SalgoHeader(
+          title: 'Favoritos',
+          subtitle: 'Tus planes guardados',
+          background: AppColors.teal,
+        ),
         Expanded(
           child: favorites.isEmpty
               ? const _EmptyFavorites()
               : ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppDimensions.spaceL,
+                    AppDimensions.spaceL,
+                    AppDimensions.spaceL,
+                    AppDimensions.spaceXXL,
+                  ),
                   itemCount: favorites.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 14),
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(height: AppDimensions.spaceM + 2),
                   itemBuilder: (context, index) {
                     final Place place = favorites[index];
                     return FavoritePlaceCard(
@@ -53,7 +65,9 @@ class _EmptyFavorites extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.spaceXXL + 8,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -63,13 +77,7 @@ class _EmptyFavorites extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.white,
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.textDark.withValues(alpha: 0.1),
-                    blurRadius: 14,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
+                boxShadow: AppShadows.card,
               ),
               child: const Icon(
                 Icons.favorite_border,
@@ -77,18 +85,18 @@ class _EmptyFavorites extends StatelessWidget {
                 color: AppColors.orange,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppDimensions.spaceXL),
             Text(
               'Aún no tienes favoritos',
               textAlign: TextAlign.center,
-              style: AppTheme.display(fontSize: 22),
+              style: AppTypography.display(fontSize: 22),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppDimensions.spaceS),
             Text(
               'Toca el corazón de un lugar para guardarlo aquí y encontrarlo '
               'cuando quieras.',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: AppTypography.body(
                 color: AppColors.textDark.withValues(alpha: 0.7),
                 height: 1.4,
               ),

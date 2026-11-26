@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../models/category.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_dimensions.dart';
+import '../theme/app_gradients.dart';
+import '../theme/app_shadows.dart';
+import '../theme/app_typography.dart';
 
 class CategoryCard extends StatelessWidget {
   const CategoryCard({super.key, required this.category, this.onTap});
@@ -13,30 +17,27 @@ class CategoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(AppDimensions.radiusM),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 52,
-            height: 52,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
-              color: AppColors.orange,
-              borderRadius: BorderRadius.circular(16),
+              gradient: AppGradients.primary,
+              borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+              boxShadow: AppShadows.card,
             ),
-            child: Icon(category.icon, color: Colors.white, size: 28),
+            child: Icon(category.icon, color: AppColors.textLight, size: 28),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppDimensions.spaceS),
           Text(
             category.name,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: AppColors.textDark,
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-            ),
+            style: AppTypography.caption(fontSize: 12),
           ),
         ],
       ),
