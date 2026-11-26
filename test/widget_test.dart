@@ -54,6 +54,7 @@ void main() {
     expect(find.text('Hola, Usuario'), findsOneWidget);
     expect(find.text('¿Qué plan hoy?'), findsOneWidget);
     expect(find.text('Categorías'), findsOneWidget);
+    expect(find.text('Ver todo'), findsOneWidget);
 
     await tester.tap(find.text('Deportes'));
     await tester.pumpAndSettle();

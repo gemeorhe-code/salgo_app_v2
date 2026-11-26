@@ -31,9 +31,12 @@ class PlaceCard extends StatelessWidget {
           children: [
             Expanded(child: PlaceImage(place: place)),
             Padding(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(AppDimensions.spaceS + 2),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.spaceM,
+                  vertical: AppDimensions.spaceS,
+                ),
                 decoration: BoxDecoration(
                   gradient: AppGradients.primary,
                   borderRadius: BorderRadius.circular(AppDimensions.radiusM),

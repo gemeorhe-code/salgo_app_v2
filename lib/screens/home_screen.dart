@@ -113,6 +113,7 @@ class _HomeContentState extends State<_HomeContent> {
     final String city = profile.city.trim().isEmpty
         ? 'Bucaramanga'
         : profile.city.trim();
+    final String dateLabel = _todayLabel();
     final List<Place> places = searchPlaces(
       PlacesScope.of(context).places,
       _query,
@@ -129,7 +130,7 @@ class _HomeContentState extends State<_HomeContent> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _Greeting(name: firstName, city: city),
+          _Greeting(name: firstName, city: city, dateLabel: dateLabel),
           _buildSearchBar(),
           if (!isSearching) const SectionTitle(title: 'Categorías'),
           if (!isSearching)
@@ -157,11 +158,34 @@ class _HomeContentState extends State<_HomeContent> {
                 ],
               ),
             ),
-          const SectionTitle(title: 'Recomendados para ti'),
+          const SectionTitle(
+            title: 'Recomendados para ti',
+            trailing: _ViewAllLabel(),
+          ),
           _buildRecommended(places, recommendedHeight),
         ],
       ),
     );
+  }
+
+  String _todayLabel() {
+    const List<String> weekdays = [
+      'lunes',
+      'martes',
+      'miércoles',
+      'jueves',
+      'viernes',
+      'sábado',
+      'domingo',
+    ];
+    final DateTime now = DateTime.now();
+    final String moment = now.hour < 12
+        ? 'mañana'
+        : now.hour < 19
+        ? 'tarde'
+        : 'noche';
+    final String label = '${weekdays[now.weekday - 1]} por la $moment';
+    return label[0].toUpperCase() + label.substring(1);
   }
 
   Widget _buildSearchBar() {
@@ -188,7 +212,9 @@ class _HomeContentState extends State<_HomeContent> {
         height: height,
         child: Center(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDimensions.spaceXXL,
+            ),
             child: Text(
               'No encontramos lugares con ese texto',
               textAlign: TextAlign.center,
@@ -211,7 +237,7 @@ class _HomeContentState extends State<_HomeContent> {
         ),
         itemCount: places.length,
         separatorBuilder: (_, _) =>
-            const SizedBox(width: AppDimensions.spaceM + 2),
+            const SizedBox(width: AppDimensions.spaceM),
         itemBuilder: (context, index) {
           final Place place = places[index];
           return PlaceCard(
@@ -229,10 +255,15 @@ class _HomeContentState extends State<_HomeContent> {
 }
 
 class _Greeting extends StatelessWidget {
-  const _Greeting({required this.name, required this.city});
+  const _Greeting({
+    required this.name,
+    required this.city,
+    required this.dateLabel,
+  });
 
   final String name;
   final String city;
+  final String dateLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -281,7 +312,7 @@ class _Greeting extends StatelessWidget {
                     ),
                     const SizedBox(width: AppDimensions.spaceXS),
                     Text(
-                      'En $city',
+                      '$city · $dateLabel',
                       style: AppTypography.caption(
                         fontSize: 12,
                         color: AppColors.textLight.withValues(alpha: 0.9),
@@ -299,6 +330,29 @@ class _Greeting extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ViewAllLabel extends StatelessWidget {
+  const _ViewAllLabel();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Ver todo',
+          style: AppTypography.label(fontSize: 12, color: AppColors.orange),
+        ),
+        const SizedBox(width: AppDimensions.spaceXS),
+        const Icon(
+          Icons.chevron_right,
+          size: 14,
+          color: AppColors.orange,
+        ),
+      ],
     );
   }
 }
