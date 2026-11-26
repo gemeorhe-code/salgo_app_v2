@@ -40,6 +40,8 @@ class SalgoHeader extends StatelessWidget {
               children: [
                 Text(
                   title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: AppTypography.display(
                     fontSize: 24,
                     color: AppColors.textLight,
@@ -49,6 +51,8 @@ class SalgoHeader extends StatelessWidget {
                   const SizedBox(height: AppDimensions.spaceXS),
                   Text(
                     subtitle!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: AppTypography.body(
                       fontSize: 13,
                       color: AppColors.textLight.withValues(alpha: 0.85),

@@ -48,15 +48,21 @@ class OptionRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: AppTypography.title(fontSize: 15),
                 ),
               ),
               if (value != null)
-                Text(
-                  value!,
-                  style: AppTypography.caption(
-                    fontSize: 12,
-                    color: AppColors.textDark.withValues(alpha: 0.65),
+                Flexible(
+                  child: Text(
+                    value!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.caption(
+                      fontSize: 12,
+                      color: AppColors.textDark.withValues(alpha: 0.65),
+                    ),
                   ),
                 ),
               const SizedBox(width: AppDimensions.spaceS),

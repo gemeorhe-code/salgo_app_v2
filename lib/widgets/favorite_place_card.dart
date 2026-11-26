@@ -79,11 +79,15 @@ class FavoritePlaceCard extends StatelessWidget {
                                 size: 16,
                               ),
                               const SizedBox(width: AppDimensions.spaceXS),
-                              Text(
-                                place.rating.toStringAsFixed(1),
-                                style: AppTypography.label(
-                                  fontSize: 13,
-                                  color: AppColors.textLight,
+                              Flexible(
+                                child: Text(
+                                  place.rating.toStringAsFixed(1),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTypography.label(
+                                    fontSize: 13,
+                                    color: AppColors.textLight,
+                                  ),
                                 ),
                               ),
                             ],

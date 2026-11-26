@@ -53,7 +53,12 @@ class MapPlaceCard extends StatelessWidget {
                 const SizedBox(height: AppDimensions.spaceXS),
                 Text(
                   place.category,
-                  style: AppTypography.label(fontSize: 12, color: AppColors.teal),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.label(
+                    fontSize: 12,
+                    color: AppColors.teal,
+                  ),
                 ),
                 const SizedBox(height: AppDimensions.spaceXS),
                 Text(

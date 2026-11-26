@@ -34,12 +34,18 @@ class SectionTitle extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: AppTypography.display(fontSize: subtitle == null ? 22 : 24),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.display(
+                    fontSize: subtitle == null ? 22 : 24,
+                  ),
                 ),
                 if (subtitle != null) ...[
                   const SizedBox(height: AppDimensions.spaceXS),
                   Text(
                     subtitle!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: AppTypography.body(
                       fontSize: 13,
                       color: AppColors.textDark.withValues(alpha: 0.7),
@@ -49,7 +55,7 @@ class SectionTitle extends StatelessWidget {
               ],
             ),
           ),
-          ?trailing,
+          if (trailing != null) Flexible(child: trailing!),
         ],
       ),
     );

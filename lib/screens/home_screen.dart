@@ -289,6 +289,8 @@ class _Greeting extends StatelessWidget {
               children: [
                 Text(
                   'Hola, $name',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: AppTypography.display(
                     fontSize: 22,
                     color: AppColors.textLight,
@@ -311,11 +313,15 @@ class _Greeting extends StatelessWidget {
                       color: AppColors.textLight,
                     ),
                     const SizedBox(width: AppDimensions.spaceXS),
-                    Text(
-                      '$city · $dateLabel',
-                      style: AppTypography.caption(
-                        fontSize: 12,
-                        color: AppColors.textLight.withValues(alpha: 0.9),
+                    Flexible(
+                      child: Text(
+                        '$city · $dateLabel',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.caption(
+                          fontSize: 12,
+                          color: AppColors.textLight.withValues(alpha: 0.9),
+                        ),
                       ),
                     ),
                   ],
@@ -342,9 +348,13 @@ class _ViewAllLabel extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          'Ver todo',
-          style: AppTypography.label(fontSize: 12, color: AppColors.orange),
+        Flexible(
+          child: Text(
+            'Ver todo',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTypography.label(fontSize: 12, color: AppColors.orange),
+          ),
         ),
         const SizedBox(width: AppDimensions.spaceXS),
         const Icon(

@@ -171,6 +171,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Text(
                             upRepository.name,
                             textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: AppTypography.display(fontSize: 24),
                           ),
                           if (upRepository.email.trim().isNotEmpty) ...[
@@ -178,6 +180,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Text(
                               upRepository.email,
                               textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: AppTypography.body(
                                 color: AppColors.textDark.withValues(
                                   alpha: 0.7,
