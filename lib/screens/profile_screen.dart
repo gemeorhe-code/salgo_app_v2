@@ -12,9 +12,13 @@ import '../data/places_repository.dart';
 import '../data/places_scope.dart';
 import '../data/preferences_repository.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_theme.dart';
-import '../widgets/salgo_header.dart';
+import '../theme/app_dimensions.dart';
+import '../theme/app_gradients.dart';
+import '../theme/app_shadows.dart';
+import '../theme/app_typography.dart';
+import '../widgets/option_row.dart';
 import '../widgets/secondary_button.dart';
+import '../widgets/stat_card.dart';
 import 'admin_places_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -98,13 +102,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final PlacesRepository repository = PlacesScope.of(context);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.only(bottom: 40),
+      padding: const EdgeInsets.only(bottom: AppDimensions.spaceXXL + 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SalgoHeader(title: 'PERFIL', subtitle: 'Tu cuenta SALGO'),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            padding: const EdgeInsets.fromLTRB(
+              AppDimensions.spaceL,
+              AppDimensions.spaceL,
+              AppDimensions.spaceL,
+              0,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -113,19 +121,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   builder: (context, _) {
                     return Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 24,
+                        horizontal: AppDimensions.spaceXL,
+                        vertical: AppDimensions.spaceXXL,
                       ),
                       decoration: BoxDecoration(
                         color: AppColors.white,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.textDark.withValues(alpha: 0.12),
-                            blurRadius: 12,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
+                        borderRadius: BorderRadius.circular(
+                          AppDimensions.radiusL,
+                        ),
+                        boxShadow: AppShadows.card,
                       ),
                       child: Column(
                         children: [
@@ -135,28 +139,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              gradient: const LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [AppColors.orange, AppColors.teal],
-                              ),
+                              gradient: AppGradients.primary,
                               border: Border.all(
                                 color: AppColors.teal,
                                 width: 3,
                               ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.textDark.withValues(
-                                    alpha: 0.15,
-                                  ),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
+                              boxShadow: AppShadows.floating,
                             ),
                             child: upRepository.photoUrl != null
                                 ? ClipRRect(
-                                    borderRadius: BorderRadius.circular(56),
+                                    borderRadius: BorderRadius.circular(
+                                      AppDimensions.radiusL * 2 + 8,
+                                    ),
                                     child: Image.network(
                                       upRepository.photoUrl!,
                                       fit: BoxFit.cover,
@@ -173,22 +167,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     color: AppColors.textLight,
                                   ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: AppDimensions.spaceL),
                           Text(
                             upRepository.name,
                             textAlign: TextAlign.center,
-                            style: AppTheme.display(fontSize: 24),
+                            style: AppTypography.display(fontSize: 24),
                           ),
                           if (upRepository.email.trim().isNotEmpty) ...[
-                            const SizedBox(height: 4),
+                            const SizedBox(height: AppDimensions.spaceXS),
                             Text(
                               upRepository.email,
                               textAlign: TextAlign.center,
-                              style: TextStyle(
+                              style: AppTypography.body(
                                 color: AppColors.textDark.withValues(
                                   alpha: 0.7,
                                 ),
-                                fontWeight: FontWeight.w500,
                                 fontSize: 15,
                               ),
                             ),
@@ -198,21 +191,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     );
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppDimensions.spaceL),
                 ListenableBuilder(
                   listenable: repository,
                   builder: (context, _) {
                     return Row(
                       children: [
                         Expanded(
-                          child: _StatBox(
+                          child: StatCard(
                             label: 'Favoritos',
                             value: '${repository.favorites.length}',
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: AppDimensions.spaceM),
                         Expanded(
-                          child: _StatBox(
+                          child: StatCard(
                             label: 'Ciudad',
                             value: upRepository.city,
                           ),
@@ -221,22 +214,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     );
                   },
                 ),
-                const SizedBox(height: 20),
-                _OptionTile(
+                const SizedBox(height: AppDimensions.spaceXL),
+                OptionRow(
                   icon: Icons.edit_outlined,
                   label: 'Editar perfil',
                   onTap: () => _editProfile(context),
                 ),
-                const SizedBox(height: 10),
-                _OptionTile(
+                const SizedBox(height: AppDimensions.spaceS),
+                OptionRow(
                   icon: Icons.tune,
                   label: 'Mis preferencias',
                   onTap: () =>
                       Navigator.pushNamed(context, AppRoutes.preferences),
                 ),
                 if (_canManagePlaces) ...[
-                  const SizedBox(height: 10),
-                  _OptionTile(
+                  const SizedBox(height: AppDimensions.spaceS),
+                  OptionRow(
                     icon: Icons.admin_panel_settings_outlined,
                     label: 'Administrar lugares',
                     onTap: () {
@@ -248,13 +241,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     },
                   ),
                 ],
-                const SizedBox(height: 10),
-                _OptionTile(
+                const SizedBox(height: AppDimensions.spaceS),
+                OptionRow(
                   icon: Icons.notifications_none,
                   label: 'Notificaciones',
                   onTap: () => _showNotifications(context),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: AppDimensions.spaceXXL),
                 SecondaryButton(
                   label: _isSigningOut ? 'Cerrando sesión…' : 'Cerrar sesión',
                   leading: const Icon(Icons.logout),
@@ -266,106 +259,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _StatBox extends StatelessWidget {
-  const _StatBox({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      decoration: BoxDecoration(
-        color: AppColors.orange,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: AppColors.textLight.withValues(alpha: 0.9),
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-            ),
-          ),
-          const SizedBox(height: 6),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              value,
-              maxLines: 1,
-              style: const TextStyle(
-                color: AppColors.textLight,
-                fontWeight: FontWeight.w800,
-                fontSize: 22,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _OptionTile extends StatelessWidget {
-  const _OptionTile({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.white,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: AppColors.teal.withValues(alpha: 0.35)),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.teal.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: AppColors.teal, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    color: AppColors.textDark,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                  ),
-                ),
-              ),
-              const Icon(Icons.chevron_right, color: AppColors.teal),
-            ],
-          ),
-        ),
       ),
     );
   }

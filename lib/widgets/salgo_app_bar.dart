@@ -9,7 +9,14 @@ import '../theme/app_gradients.dart';
 import '../theme/app_typography.dart';
 
 class SalgoAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const SalgoAppBar({super.key});
+  const SalgoAppBar({
+    super.key,
+    this.leading,
+    this.extraActions = const <Widget>[],
+  });
+
+  final Widget? leading;
+  final List<Widget> extraActions;
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -17,6 +24,7 @@ class SalgoAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      leading: leading,
       title: Text(
         'SALGO',
         style: AppTypography.display(
@@ -44,6 +52,7 @@ class SalgoAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
       actions: [
+        ...extraActions,
         Consumer<NotificationsRepository>(
           builder: (context, notifications, _) {
             final int unreadCount = notifications.unreadCount;

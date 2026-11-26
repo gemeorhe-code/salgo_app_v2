@@ -5,12 +5,15 @@ import '../data/mock_data.dart';
 import '../data/notifications_repository.dart';
 import '../data/preferences_repository.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_dimensions.dart';
+import '../theme/app_shadows.dart';
+import '../theme/app_typography.dart';
 import '../utils/formatters.dart';
 import '../widgets/custom_dropdown.dart';
 import '../widgets/icon_slider.dart';
 import '../widgets/primary_button.dart';
 import '../widgets/preference_chip.dart';
+import '../widgets/salgo_app_bar.dart';
 import '../widgets/section_pill.dart';
 
 class _CompanionOption {
@@ -143,7 +146,9 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
       backgroundColor: AppColors.cream,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppDimensions.radiusPill),
+        ),
       ),
       builder: (sheetContext) {
         return SafeArea(
@@ -153,7 +158,12 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
               maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.8,
             ),
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+              padding: const EdgeInsets.fromLTRB(
+                AppDimensions.spaceXXL,
+                AppDimensions.spaceXXL,
+                AppDimensions.spaceXXL,
+                AppDimensions.spaceXL,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -161,9 +171,9 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                   Text(
                     '¡Listo!',
                     textAlign: TextAlign.center,
-                    style: AppTheme.display(fontSize: 26),
+                    style: AppTypography.display(fontSize: 26),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppDimensions.spaceL),
                   _SummaryRow(label: '¿Con quién sales?', value: _companion!),
                   _SummaryRow(
                     label: 'Tipo de plan',
@@ -178,7 +188,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                     value: formatMinutes(_minutes.toInt()),
                   ),
                   _SummaryRow(label: 'Lugar', value: _place!),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppDimensions.spaceM),
                   PrimaryButton(
                     label: 'Entendido',
                     icon: Icons.check,
@@ -199,6 +209,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: const SalgoAppBar(),
       body: SafeArea(
         child: Column(
           children: [
@@ -208,27 +219,34 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                 child: Opacity(
                   opacity: _isBusy ? 0.6 : 1,
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppDimensions.spaceL,
+                      AppDimensions.spaceM,
+                      AppDimensions.spaceL,
+                      AppDimensions.spaceXL,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 26,
+                            horizontal: AppDimensions.spaceXL,
+                            vertical: AppDimensions.spaceXXL + 2,
                           ),
                           decoration: BoxDecoration(
                             color: AppColors.teal,
-                            borderRadius: BorderRadius.circular(28),
+                            borderRadius: BorderRadius.circular(
+                              AppDimensions.radiusPill,
+                            ),
                           ),
                           child: Text(
                             'Cuéntanos tus preferencias',
                             textAlign: TextAlign.center,
-                            style: AppTheme.display(
-                              fontSize: 28,
-                              color: AppColors.textLight,
-                            ),
+                             style: AppTypography.display(
+                               fontSize: 28,
+                               color: AppColors.textLight,
+                             ),
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -237,18 +255,23 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                           builder: (context, error, _) {
                             if (error == null) return const SizedBox.shrink();
                             return Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              padding: const EdgeInsets.all(12),
+                              margin: const EdgeInsets.only(
+                                bottom: AppDimensions.spaceM,
+                              ),
+                              padding: const EdgeInsets.all(
+                                AppDimensions.spaceM,
+                              ),
                               decoration: BoxDecoration(
                                 color: AppColors.orangeDark,
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(
+                                  AppDimensions.radiusS,
+                                ),
                               ),
                               child: Text(
                                 error,
-                                style: const TextStyle(
+                                style: AppTypography.body(
                                   color: AppColors.textLight,
                                   fontSize: 13,
-                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             );
@@ -256,7 +279,9 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                         ),
                         if (_isLoading)
                           const Padding(
-                            padding: EdgeInsets.only(bottom: 12),
+                            padding: EdgeInsets.only(
+                              bottom: AppDimensions.spaceM,
+                            ),
                             child: Center(
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
@@ -268,8 +293,8 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                           label: '¿Con quién sales?',
                           child: Wrap(
                             alignment: WrapAlignment.center,
-                            spacing: 10,
-                            runSpacing: 10,
+                            spacing: AppDimensions.spaceS + 2,
+                            runSpacing: AppDimensions.spaceS + 2,
                             children: [
                               for (final option in _companions)
                                 PreferenceChip(
@@ -335,7 +360,12 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              padding: const EdgeInsets.fromLTRB(
+                AppDimensions.spaceL,
+                AppDimensions.spaceS,
+                AppDimensions.spaceL,
+                AppDimensions.spaceL,
+              ),
               child: PrimaryButton(
                 label: _isLoading
                     ? 'Cargando...'
@@ -362,10 +392,14 @@ class _Section extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 22),
+      padding: const EdgeInsets.only(bottom: AppDimensions.spaceXL + 2),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [SectionPill(label), const SizedBox(height: 12), child],
+        children: [
+          SectionPill(label),
+          const SizedBox(height: AppDimensions.spaceM),
+          child,
+        ],
       ),
     );
   }
@@ -380,30 +414,30 @@ class _SummaryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+      margin: const EdgeInsets.only(bottom: AppDimensions.spaceS + 2),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.spaceL,
+        vertical: AppDimensions.spaceM + 1,
+      ),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+        boxShadow: AppShadows.card,
       ),
       child: Row(
         children: [
           Expanded(
             child: Text(
               label,
-              style: TextStyle(
+              style: AppTypography.label(
                 color: AppColors.textDark.withValues(alpha: 0.7),
-                fontWeight: FontWeight.w600,
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppDimensions.spaceS),
           Text(
             value,
-            style: const TextStyle(
-              color: AppColors.teal,
-              fontWeight: FontWeight.w800,
-            ),
+            style: AppTypography.label(color: AppColors.teal),
           ),
         ],
       ),

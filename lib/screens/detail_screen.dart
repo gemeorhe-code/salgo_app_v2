@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import '../data/places_scope.dart';
 import '../models/place.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_dimensions.dart';
+import '../theme/app_shadows.dart';
+import '../theme/app_typography.dart';
 import '../widgets/place_image.dart';
+import '../widgets/salgo_app_bar.dart';
 
 class DetailScreen extends StatelessWidget {
   const DetailScreen({super.key});
@@ -24,16 +27,11 @@ class DetailScreen extends StatelessWidget {
         : null;
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: SalgoAppBar(
         leading: IconButton(
           tooltip: 'Volver',
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          place?.name ?? 'Detalle',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
         ),
       ),
       body: place == null
@@ -66,13 +64,18 @@ class _DetailContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.only(bottom: 28),
+      padding: const EdgeInsets.only(bottom: AppDimensions.spaceXL + 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _Gallery(place: place, onToggleFavorite: onToggleFavorite),
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+            padding: const EdgeInsets.fromLTRB(
+              AppDimensions.spaceXL,
+              AppDimensions.spaceXL,
+              AppDimensions.spaceXL,
+              0,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -82,41 +85,45 @@ class _DetailContent extends StatelessWidget {
                     Expanded(
                       child: Text(
                         place.name,
-                        style: AppTheme.display(fontSize: 28),
+                        style: AppTypography.display(fontSize: 28),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: AppDimensions.spaceM),
                     _FavoriteButton(
                       isFavorite: place.isFavorite,
                       onPressed: onToggleFavorite,
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppDimensions.spaceS),
                 Row(
                   children: [
-                    const Icon(Icons.star, color: AppColors.orange, size: 20),
-                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.star,
+                      color: AppColors.orange,
+                      size: 20,
+                    ),
+                    const SizedBox(width: AppDimensions.spaceXS),
                     Text(
                       place.rating.toStringAsFixed(1),
-                      style: const TextStyle(
+                      style: AppTypography.label(
+                        fontSize: 14,
                         color: AppColors.textDark,
-                        fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: AppDimensions.spaceS),
                     Text(
                       '(${place.reviewCount} reseñas)',
-                      style: TextStyle(
+                      style: AppTypography.body(
+                        fontSize: 13,
                         color: AppColors.textDark.withValues(alpha: 0.6),
-                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     const Spacer(),
                     _CityChip(city: place.city),
                   ],
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: AppDimensions.spaceXL),
                 _InfoRow(
                   icon: Icons.location_on_outlined,
                   label: 'Dirección',
@@ -132,15 +139,18 @@ class _DetailContent extends StatelessWidget {
                   label: 'Precio',
                   value: place.price,
                 ),
-                const SizedBox(height: 8),
-                Text('Descripción', style: AppTheme.display(fontSize: 22)),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppDimensions.spaceS),
+                Text(
+                  'Descripción',
+                  style: AppTypography.display(fontSize: 22),
+                ),
+                const SizedBox(height: AppDimensions.spaceS),
                 Text(
                   place.description,
-                  style: TextStyle(
+                  style: AppTypography.body(
+                    fontSize: 15,
                     color: AppColors.textDark.withValues(alpha: 0.8),
                     height: 1.5,
-                    fontSize: 15,
                   ),
                 ),
               ],
@@ -168,8 +178,8 @@ class _Gallery extends StatelessWidget {
             child: PlaceImage(place: place, iconSize: 84),
           ),
           Positioned(
-            top: 12,
-            right: 12,
+            top: AppDimensions.spaceM,
+            right: AppDimensions.spaceM,
             child: _FavoriteButton(
               isFavorite: place.isFavorite,
               onPressed: onToggleFavorite,
@@ -213,22 +223,24 @@ class _CityChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.spaceM,
+        vertical: AppDimensions.spaceS - 2,
+      ),
       decoration: BoxDecoration(
         color: AppColors.teal,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusM),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(Icons.place, color: AppColors.textLight, size: 14),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppDimensions.spaceXS),
           Text(
             city,
-            style: const TextStyle(
-              color: AppColors.textLight,
-              fontWeight: FontWeight.w700,
+            style: AppTypography.label(
               fontSize: 12,
+              color: AppColors.textLight,
             ),
           ),
         ],
@@ -251,43 +263,47 @@ class _InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      margin: const EdgeInsets.only(
+        bottom: AppDimensions.spaceS + 2,
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.spaceS + 6,
+        vertical: AppDimensions.spaceM,
+      ),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+        boxShadow: AppShadows.card,
       ),
       child: Row(
         children: [
           Container(
-            width: 38,
-            height: 38,
+            width: AppDimensions.mapButtonSize - 4,
+            height: AppDimensions.mapButtonSize - 4,
             decoration: BoxDecoration(
               color: AppColors.teal.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusS),
             ),
             child: Icon(icon, color: AppColors.teal, size: 20),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppDimensions.spaceM),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   label,
-                  style: TextStyle(
-                    color: AppColors.textDark.withValues(alpha: 0.55),
-                    fontWeight: FontWeight.w600,
+                  style: AppTypography.caption(
                     fontSize: 12,
+                    color: AppColors.textDark.withValues(alpha: 0.55),
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppDimensions.spaceXS / 2),
                 Text(
                   value,
-                  style: const TextStyle(
-                    color: AppColors.textDark,
-                    fontWeight: FontWeight.w700,
+                  style: AppTypography.label(
                     fontSize: 14,
+                    color: AppColors.textDark,
                   ),
                 ),
               ],
