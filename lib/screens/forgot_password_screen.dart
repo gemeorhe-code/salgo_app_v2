@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import '../app_routes.dart';
 import '../data/supabase_auth_service.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_dimensions.dart';
+import '../theme/app_typography.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/primary_button.dart';
 import '../widgets/secondary_button.dart';
@@ -77,29 +78,32 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDimensions.spaceXXL + 4,
+              vertical: AppDimensions.spaceXXL,
+            ),
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SalgoLogo(size: 68),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppDimensions.spaceXXL),
                   Text(
                     'Recuperar contraseña',
                     textAlign: TextAlign.center,
-                    style: AppTheme.display(fontSize: 28),
+                    style: AppTypography.display(fontSize: 28),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppDimensions.spaceS),
                   Text(
                     'Te enviaremos un enlace para crear una contraseña nueva',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: AppColors.textDark.withValues(alpha: 0.7),
+                    style: AppTypography.body(
                       fontSize: 15,
+                      color: AppColors.textDark.withValues(alpha: 0.7),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppDimensions.spaceXXL),
                   CustomTextField(
                     label: 'Correo electrónico',
                     controller: _emailController,
@@ -108,13 +112,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     prefixIcon: Icons.mail_outline,
                     validator: _validateEmail,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppDimensions.spaceXXL),
                   PrimaryButton(
                     label: _isLoading ? 'Enviando enlace...' : 'Enviar enlace',
                     icon: Icons.mail_outline,
                     onPressed: _isLoading ? null : _submit,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppDimensions.spaceM),
                   SecondaryButton(
                     label: 'Volver al inicio de sesión',
                     leading: const Icon(Icons.arrow_back),

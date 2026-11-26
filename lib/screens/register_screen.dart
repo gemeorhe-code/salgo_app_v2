@@ -8,7 +8,8 @@ import '../data/supabase_auth_service.dart';
 import '../data/supabase_gate.dart';
 import '../data/user_profile_repository.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_theme.dart';
+import '../theme/app_dimensions.dart';
+import '../theme/app_typography.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/primary_button.dart';
 import '../widgets/salgo_logo.dart';
@@ -132,29 +133,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDimensions.spaceXXL + 4,
+              vertical: AppDimensions.spaceXXL,
+            ),
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SalgoLogo(size: 68),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppDimensions.spaceXXL),
                   Text(
                     'Crear cuenta',
                     textAlign: TextAlign.center,
-                    style: AppTheme.display(fontSize: 30),
+                    style: AppTypography.display(fontSize: 30),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppDimensions.spaceS),
                   Text(
                     'Regístrate y empieza a planear tu salida',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: AppColors.textDark.withValues(alpha: 0.7),
+                    style: AppTypography.body(
                       fontSize: 15,
+                      color: AppColors.textDark.withValues(alpha: 0.7),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppDimensions.spaceXXL),
                   CustomTextField(
                     label: 'Nombre completo',
                     controller: _nameController,
@@ -162,7 +166,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     prefixIcon: Icons.person_outline,
                     validator: _validateName,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppDimensions.spaceL),
                   CustomTextField(
                     label: 'Correo electrónico',
                     controller: _emailController,
@@ -171,7 +175,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     prefixIcon: Icons.mail_outline,
                     validator: _validateEmail,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppDimensions.spaceL),
                   CustomTextField(
                     label: 'Contraseña',
                     controller: _passwordController,
@@ -180,7 +184,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     obscureText: true,
                     validator: _validatePassword,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppDimensions.spaceL),
                   CustomTextField(
                     label: 'Confirmar contraseña',
                     controller: _confirmController,
@@ -189,21 +193,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     obscureText: true,
                     validator: _validateConfirm,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppDimensions.spaceXXL),
                   PrimaryButton(
                     label: _isLoading ? 'Creando cuenta...' : 'Registrarse',
                     icon: Icons.person_add,
                     onPressed: _isLoading ? null : _submit,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppDimensions.spaceS),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
+                      Text(
                         '¿Ya tienes cuenta?',
-                        style: TextStyle(
-                          color: AppColors.textDark,
+                        style: AppTypography.body(
                           fontSize: 15,
+                          color: AppColors.textDark,
                         ),
                       ),
                       TextButton(
@@ -211,12 +215,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           context,
                           AppRoutes.login,
                         ),
-                        child: const Text(
+                        child: Text(
                           'Inicia sesión',
-                          style: TextStyle(
-                            color: AppColors.orange,
-                            fontWeight: FontWeight.w800,
-                          ),
+                          style: AppTypography.label(color: AppColors.orange),
                         ),
                       ),
                     ],

@@ -7,8 +7,12 @@ import '../data/places_repository.dart';
 import '../data/places_scope.dart';
 import '../models/place.dart';
 import '../models/place_access.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_dimensions.dart';
+import '../theme/app_typography.dart';
 import '../utils/place_form_validator.dart';
 import '../widgets/primary_button.dart';
+import '../widgets/salgo_app_bar.dart';
 
 class AdminPlacesScreen extends StatefulWidget {
   const AdminPlacesScreen({super.key, this.repository});
@@ -89,9 +93,13 @@ class _AdminPlacesScreenState extends State<AdminPlacesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Administrar lugares'),
-        actions: <Widget>[
+      appBar: SalgoAppBar(
+        leading: IconButton(
+          tooltip: 'Volver',
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+        extraActions: <Widget>[
           IconButton(
             onPressed: _loading ? null : () => unawaited(_load()),
             icon: const Icon(Icons.refresh),
@@ -108,12 +116,15 @@ class _AdminPlacesScreenState extends State<AdminPlacesScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : !_access.canManage
-              ? const Center(
+              ? Center(
                   child: Padding(
-                    padding: EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(
+                      AppDimensions.spaceXXL,
+                    ),
                     child: Text(
                       'No tienes permisos para administrar lugares.',
                       textAlign: TextAlign.center,
+                      style: AppTypography.body(),
                     ),
                   ),
                 )
@@ -121,7 +132,12 @@ class _AdminPlacesScreenState extends State<AdminPlacesScreen> {
                   onRefresh: () => _load(showLoading: false),
                   child: ListView.separated(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppDimensions.spaceL,
+                      AppDimensions.spaceL,
+                      AppDimensions.spaceL,
+                      AppDimensions.spaceXXL * 3 + 16,
+                    ),
                     itemCount: _places.length,
                     separatorBuilder: (_, _) => const Divider(height: 1),
                     itemBuilder: (BuildContext context, int index) {
@@ -364,26 +380,30 @@ class _PlaceEditorScreenState extends State<PlaceEditorScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.place == null ? 'Nuevo lugar' : 'Editar lugar'),
+      appBar: SalgoAppBar(
+        leading: IconButton(
+          tooltip: 'Volver',
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppDimensions.spaceL),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               _field('name', 'Nombre', _name),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppDimensions.spaceM),
               _dropdown(
                 'category',
                 'Categoría',
                 _category,
                 PlaceFormValidator.categories,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppDimensions.spaceM),
               _dropdown('city', 'Ciudad', _city, PlaceFormValidator.cities),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppDimensions.spaceM),
               _field(
                 'rating',
                 'Rating (0 a 5)',
@@ -392,27 +412,27 @@ class _PlaceEditorScreenState extends State<PlaceEditorScreen> {
                   decimal: true,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppDimensions.spaceM),
               _field(
                 'reviewCount',
                 'Número de reseñas',
                 _reviewCount,
                 keyboardType: TextInputType.number,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppDimensions.spaceM),
               _field('address', 'Dirección', _address),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppDimensions.spaceM),
               _field('schedule', 'Horario', _schedule),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppDimensions.spaceM),
               _field('price', 'Precio', _price),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppDimensions.spaceM),
               _field(
                 'description',
                 'Descripción',
                 _description,
                 maxLines: 3,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppDimensions.spaceM),
               _field(
                 'lat',
                 'Latitud',
@@ -422,7 +442,7 @@ class _PlaceEditorScreenState extends State<PlaceEditorScreen> {
                   signed: true,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppDimensions.spaceM),
               _field(
                 'lng',
                 'Longitud',
@@ -432,18 +452,21 @@ class _PlaceEditorScreenState extends State<PlaceEditorScreen> {
                   signed: true,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppDimensions.spaceM),
               _field(
                 'imageUrl',
                 'URL de imagen https (opcional)',
                 _imageUrl,
                 keyboardType: TextInputType.url,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppDimensions.spaceM),
               if (widget.access.isAdmin)
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Lugar activo'),
+                  title: Text(
+                    'Lugar activo',
+                    style: AppTypography.label(color: AppColors.teal),
+                  ),
                   value: _isActive,
                   onChanged: _saving
                       ? null
@@ -456,13 +479,15 @@ class _PlaceEditorScreenState extends State<PlaceEditorScreen> {
                     widget.place?.isActive == true
                         ? 'Lugar activo'
                         : 'Lugar inactivo',
+                    style: AppTypography.label(color: AppColors.teal),
                   ),
-                  subtitle: const Text(
+                  subtitle: Text(
                     'Solo el administrador puede activar o desactivar lugares.',
+                    style: AppTypography.body(fontSize: 12),
                   ),
                 ),
               if (widget.access.isAdmin) ...<Widget>[
-                const SizedBox(height: 12),
+                const SizedBox(height: AppDimensions.spaceM),
                 _field(
                   'ownerEmail',
                   'Correo del dueño (opcional)',
@@ -470,7 +495,7 @@ class _PlaceEditorScreenState extends State<PlaceEditorScreen> {
                   keyboardType: TextInputType.emailAddress,
                 ),
               ],
-              const SizedBox(height: 24),
+              const SizedBox(height: AppDimensions.spaceXXL),
               PrimaryButton(
                 label: _saving ? 'Guardando...' : 'Guardar lugar',
                 icon: Icons.save_outlined,
