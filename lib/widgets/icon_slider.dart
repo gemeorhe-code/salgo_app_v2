@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_dimensions.dart';
+import '../theme/app_typography.dart';
 
 class IconSlider extends StatelessWidget {
   const IconSlider({
@@ -33,26 +35,25 @@ class IconSlider extends StatelessWidget {
             color: AppColors.orange,
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, color: Colors.white, size: 24),
+          child: Icon(icon, color: AppColors.textLight, size: 24),
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: AppDimensions.spaceS - 2),
         Expanded(
           child: SliderTheme(
             data: SliderTheme.of(context).copyWith(
               activeTrackColor: AppColors.teal,
-              inactiveTrackColor: AppColors.teal.withValues(alpha: 0.25),
+              inactiveTrackColor: AppColors.tealSoft,
               thumbColor: AppColors.teal,
-              overlayColor: AppColors.teal.withValues(alpha: 0.20),
+              overlayColor: AppColors.teal.withValues(alpha: 0.2),
               trackHeight: 6,
               thumbShape: const RoundSliderThumbShape(
                 enabledThumbRadius: 11,
                 elevation: 3,
               ),
               valueIndicatorColor: AppColors.teal,
-              valueIndicatorTextStyle: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
+              valueIndicatorTextStyle: AppTypography.label(
                 fontSize: 13,
+                color: AppColors.textLight,
               ),
             ),
             child: Slider(
@@ -65,19 +66,21 @@ class IconSlider extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: AppDimensions.spaceS - 2),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.spaceM,
+            vertical: AppDimensions.spaceS,
+          ),
           decoration: BoxDecoration(
             color: AppColors.teal,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppDimensions.radiusM),
           ),
           child: Text(
             valueLabel,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
+            style: AppTypography.label(
               fontSize: 14,
+              color: AppColors.textLight,
             ),
           ),
         ),

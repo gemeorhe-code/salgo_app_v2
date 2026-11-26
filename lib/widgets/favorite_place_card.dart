@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../models/place.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_dimensions.dart';
+import '../theme/app_shadows.dart';
+import '../theme/app_typography.dart';
 import 'place_image.dart';
 
 class FavoritePlaceCard extends StatelessWidget {
@@ -25,14 +28,8 @@ class FavoritePlaceCard extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: AppColors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.textDark.withValues(alpha: 0.12),
-              blurRadius: 12,
-              offset: const Offset(0, 5),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+          boxShadow: AppShadows.card,
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -41,7 +38,12 @@ class FavoritePlaceCard extends StatelessWidget {
             Expanded(
               child: Container(
                 color: AppColors.orange,
-                padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+                padding: const EdgeInsets.fromLTRB(
+                  AppDimensions.spaceL,
+                  AppDimensions.spaceM,
+                  AppDimensions.spaceS,
+                  AppDimensions.spaceM,
+                ),
                 child: Row(
                   children: [
                     Expanded(
@@ -53,24 +55,22 @@ class FavoritePlaceCard extends StatelessWidget {
                             place.name,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: AppColors.textLight,
-                              fontWeight: FontWeight.w800,
+                            style: AppTypography.title(
                               fontSize: 17,
+                              color: AppColors.textLight,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: AppDimensions.spaceXS),
                           Text(
                             place.city,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: AppColors.textLight.withValues(alpha: 0.9),
-                              fontWeight: FontWeight.w600,
+                            style: AppTypography.caption(
                               fontSize: 13,
+                              color: AppColors.textLight.withValues(alpha: 0.9),
                             ),
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: AppDimensions.spaceXS + 2),
                           Row(
                             children: [
                               const Icon(
@@ -78,13 +78,12 @@ class FavoritePlaceCard extends StatelessWidget {
                                 color: AppColors.textLight,
                                 size: 16,
                               ),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: AppDimensions.spaceXS),
                               Text(
                                 place.rating.toStringAsFixed(1),
-                                style: const TextStyle(
-                                  color: AppColors.textLight,
-                                  fontWeight: FontWeight.w700,
+                                style: AppTypography.label(
                                   fontSize: 13,
+                                  color: AppColors.textLight,
                                 ),
                               ),
                             ],

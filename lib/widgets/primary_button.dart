@@ -14,9 +14,12 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (icon == null) {
+      return FilledButton(onPressed: onPressed, child: Text(label));
+    }
     return FilledButton.icon(
       onPressed: onPressed,
-      icon: icon == null ? const SizedBox.shrink() : Icon(icon),
+      icon: Icon(icon),
       label: Text(label),
     );
   }

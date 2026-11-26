@@ -14,9 +14,12 @@ class SecondaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (leading == null) {
+      return OutlinedButton(onPressed: onPressed, child: Text(label));
+    }
     return OutlinedButton.icon(
       onPressed: onPressed,
-      icon: leading ?? const SizedBox.shrink(),
+      icon: leading!,
       label: Text(label),
     );
   }
